@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
-using GzsTool.PathId;
 
 namespace GzsTool
 {
@@ -12,7 +11,7 @@ namespace GzsTool
     {
         private static void Main(string[] args)
         {
-            ReadPs3PathIdFile("pathid_list_ps3.bin");
+            Hashing.ReadPs3PathIdFile("pathid_list_ps3.bin");
             Hashing.ReadDictionary("dictionary.txt");
             Hashing.ReadMd5Dictionary("fpk_dict.txt");
 
@@ -46,10 +45,12 @@ namespace GzsTool
             Console.WriteLine("GzsTool by Atvaark\n" +
                               "  A tool for unpacking g0s, fpk and fpkd files\n" +
                               "Usage:\n" +
+                              "  GzsTool file_path|folder_path\n" +
+                              "Examples:\n" +
                               "  GzsTool file_path.g0s  - Unpacks the g0s file\n" +
                               "  GzsTool file_path.fpk  - Unpacks the fpk file\n" +
                               "  GzsTool file_path.fpkd - Unpacks the fpkd file\n" +
-                              "  GzsTool folder_path    - Unpacks all fpk and fpkd files in the folder\n");
+                              "  GzsTool folder_path    - Unpacks all fpk and fpkd files in the folder");
         }
 
         private static void ReadGzsArchive(string path)
@@ -77,16 +78,6 @@ namespace GzsTool
             foreach (var file in files)
             {
                 ReadFpkArchive(file.FullName);
-            }
-        }
-
-        private static PathIdFile ReadPs3PathIdFile(string path)
-        {
-            using (FileStream stream = new FileStream(path, FileMode.Open))
-            {
-                PathIdFile pathIdFile = new PathIdFile();
-                pathIdFile.Read(stream);
-                return pathIdFile;
             }
         }
 

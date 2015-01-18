@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using GzsTool.PathId;
 
 namespace GzsTool
 {
     internal static class Hashing
     {
         private static readonly MD5 Md5 = MD5.Create();
+        private static readonly PathIdFile PathIdFile = new PathIdFile();
         private static readonly Dictionary<ulong, string> HashNameDictionary = new Dictionary<ulong, string>();
 
         private static readonly Dictionary<byte[], string> Md5HashNameDictionary =
@@ -196,6 +198,14 @@ namespace GzsTool
             }
 
             return extension;
+        }
+
+        public static void ReadPs3PathIdFile(string path)
+        {
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            {
+                PathIdFile.Read(input);
+            }
         }
     }
 }

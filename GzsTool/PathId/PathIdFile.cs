@@ -23,6 +23,13 @@ namespace GzsTool.PathId
             _fileNames = new List<string>();
         }
 
+        public static PathIdFile ReadPathIdFile(Stream input)
+        {
+            PathIdFile pathIdFile = new PathIdFile();
+            pathIdFile.Read(input);
+            return pathIdFile;
+        }
+
         public void Read(Stream input)
         {
             BigEndianBinaryReader reader = new BigEndianBinaryReader(input, Encoding.Default, true);
