@@ -2,7 +2,7 @@
 using System.IO;
 using System.Text;
 
-namespace GzsTool
+namespace GzsTool.Utility
 {
     public class BigEndianBinaryReader : BinaryReader
     {

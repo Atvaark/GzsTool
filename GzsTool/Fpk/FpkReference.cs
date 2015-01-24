@@ -1,10 +1,13 @@
 ﻿using System.IO;
+using System.Xml.Serialization;
 
 namespace GzsTool.Fpk
 {
-    internal class FpkReference
+    [XmlType("Reference")]
+    public class FpkReference
     {
-        public FpkString Reference { get; set; }
+        [XmlElement("FileName")]
+        public FpkString ReferenceFileName { get; set; }
 
         public static FpkReference ReadFpkReference(Stream input)
         {
@@ -15,7 +18,7 @@ namespace GzsTool.Fpk
 
         private void Read(Stream input)
         {
-            Reference = FpkString.ReadFpkString(input);
+            ReferenceFileName = FpkString.ReadFpkString(input);
         }
     }
 }

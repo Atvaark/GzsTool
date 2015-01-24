@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using GzsTool.PathId;
 
-namespace GzsTool
+namespace GzsTool.Utility
 {
     internal static class Hashing
     {
@@ -135,17 +135,19 @@ namespace GzsTool
             return CityHash.CityHash.CityHash64WithSeeds(text + "\0", seed0, seed1) & 0xFFFFFFFFFFFF;
         }
 
-        internal static string GetFileNameFromHash(ulong hash, int fileExtensionId)
+        internal static bool TryGetFileNameFromHash(ulong hash, int fileExtensionId, out string fileName)
         {
-            string fileName;
             string fileExtension = TypeExtensions[fileExtensionId];
             ulong hashMasked = hash & 0xFFFFFFFFFFFF;
-            if (HashNameDictionary.TryGetValue(hashMasked, out fileName) == false)
+
+            bool fileNameFound = HashNameDictionary.TryGetValue(hashMasked, out fileName);
+            if (fileNameFound == false)
             {
                 fileName = String.Format("{0:x}", hashMasked);
             }
+
             fileName = String.Format("{0}.{1}", fileName, fileExtension);
-            return fileName;
+            return fileNameFound;
         }
 
         public static void ReadDictionary(string path)
@@ -177,15 +179,15 @@ namespace GzsTool
             }
         }
 
-        internal static string GetFileNameFromMd5Hash(byte[] md5Hash, string entryName)
+        internal static bool TryGetFileNameFromMd5Hash(byte[] md5Hash, string entryName, out string fileName)
         {
-            string fileName;
             if (Md5HashNameDictionary.TryGetValue(md5Hash, out fileName) == false)
             {
                 fileName = string.Format("{0}{1}", BitConverter.ToString(md5Hash).Replace("-", ""),
                     GetFileExtension(entryName));
+                return false;
             }
-            return fileName;
+            return true;
         }
 
         private static string GetFileExtension(string entryName)

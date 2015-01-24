@@ -1,15 +1,33 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Xml.Serialization;
+using GzsTool.Utility;
 
 namespace GzsTool.Gzs
 {
+    [XmlType("Entry")]
     public class GzsArchiveEntry
     {
+        [XmlAttribute("Hash")]
         public ulong Hash { get; set; }
+
+        [XmlIgnore]
+        public bool FileNameFound { get; set; }
+
+        [XmlIgnore]
         public uint Offset { get; set; }
+
+        [XmlIgnore]
         public uint Size { get; set; }
-        public string FileName { get; set; }
+
+        [XmlAttribute("FilePath")]
+        public string FilePath { get; set; }
+
+        public bool ShouldSerializeHash()
+        {
+            return FileNameFound == false;
+        }
 
         public static GzsArchiveEntry ReadGzArchiveEntry(Stream input)
         {
@@ -20,31 +38,41 @@ namespace GzsTool.Gzs
 
         public void Read(Stream input)
         {
-            using (BinaryReader reader = new BinaryReader(input, Encoding.Default, true))
-            {
-                Hash = reader.ReadUInt64();
-                Offset = reader.ReadUInt32();
-                Size = reader.ReadUInt32();
-            }
+            BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
+            Hash = reader.ReadUInt64();
+            Offset = reader.ReadUInt32();
+            Size = reader.ReadUInt32();
+            string filePath;
+            FileNameFound = TryGetFilePath(out filePath);
+            FilePath = filePath;
         }
 
         public void ExportFile(Stream input, string outputDirectory)
         {
             var data = ReadFile(input);
 
-            int fileExtensionId = (int) (Hash >> 52 & 0xFFFF);
-            FileName = Hashing.GetFileNameFromHash(Hash, fileExtensionId); // TODO: Remove dependendy to Program
-
-            if (FileName.StartsWith("/"))
-                FileName = FileName.Substring(1, FileName.Length - 1);
-            FileName = FileName.Replace("/", "\\");
-
-            string outputFilePath = Path.Combine(outputDirectory, FileName);
+            string outputFilePath = GetOutputPath(outputDirectory);
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
             using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
             {
                 output.Write(data, 0, data.Length);
             }
+        }
+
+        private string GetOutputPath(string outputDirectory)
+        {
+            string filePath = FilePath;
+            if (filePath.StartsWith("/"))
+                filePath = filePath.Substring(1, filePath.Length - 1);
+            filePath = filePath.Replace("/", "\\");
+            return Path.Combine(outputDirectory, filePath);
+        }
+
+        private bool TryGetFilePath(out string filePath)
+        {
+            int fileExtensionId = (int) (Hash >> 52 & 0xFFFF);
+            bool fileNameFound = Hashing.TryGetFileNameFromHash(Hash, fileExtensionId, out filePath);
+            return fileNameFound;
         }
 
         private byte[] ReadFile(Stream input)

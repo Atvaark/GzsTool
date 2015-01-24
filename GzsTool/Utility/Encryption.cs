@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace GzsTool
+namespace GzsTool.Utility
 {
     internal static class Encryption
     {

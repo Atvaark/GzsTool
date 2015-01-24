@@ -46,8 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BigEndianBinaryReader.cs" />
-    <Compile Include="Encryption.cs" />
+    <Compile Include="Utility\BigEndianBinaryReader.cs" />
+    <Compile Include="Utility\Encryption.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />
     <Compile Include="Fpk\FpkReference.cs" />
@@ -55,7 +55,7 @@
     <Compile Include="Gzs\GzsArchiveEntry.cs" />
     <Compile Include="Gzs\GzsArchiveFooter.cs" />
     <Compile Include="Gzs\GzsFile.cs" />
-    <Compile Include="Hashing.cs" />
+    <Compile Include="Utility\Hashing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ExtensionMethods.cs" />
@@ -63,7 +63,7 @@
     <Compile Include="PathId\FolderInfo.cs" />
     <Compile Include="PathId\PathIdFile.cs" />
     <Compile Include="PathId\StringIndex.cs" />
-    <Compile Include="StructuralEqualityComparer.cs" />
+    <Compile Include="Utility\StructuralEqualityComparer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

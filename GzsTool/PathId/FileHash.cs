@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Text;
+using GzsTool.Utility;
 
 namespace GzsTool.PathId
 {

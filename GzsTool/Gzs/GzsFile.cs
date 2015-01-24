@@ -2,17 +2,23 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace GzsTool.Gzs
 {
+    [XmlRoot("GzsFile")]
     public class GzsFile
     {
-        private readonly List<GzsArchiveEntry> _entries;
-
         public GzsFile()
         {
-            _entries = new List<GzsArchiveEntry>();
+            Entries = new List<GzsArchiveEntry>();
         }
+
+        [XmlAttribute("Name")]
+        public string Name { get; set; }
+
+        [XmlArray("Entries")]
+        public List<GzsArchiveEntry> Entries { get; private set; }
 
         public static GzsFile ReadGzsFile(Stream input)
         {
@@ -33,13 +39,13 @@ namespace GzsTool.Gzs
             input.Seek(16*footer.Unknown2, SeekOrigin.Begin);
             for (int i = 0; i < footer.ArchiveEntryCount; i++)
             {
-                _entries.Add(GzsArchiveEntry.ReadGzArchiveEntry(input));
+                Entries.Add(GzsArchiveEntry.ReadGzArchiveEntry(input));
             }
         }
 
         public void ExportFiles(FileStream input, string outputDirectory)
         {
-            foreach (var entry in _entries)
+            foreach (var entry in Entries)
             {
                 entry.ExportFile(input, outputDirectory);
             }

@@ -1,13 +1,24 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
+using System.Xml.Serialization;
+using GzsTool.Utility;
 
 namespace GzsTool.Fpk
 {
     public class FpkString
     {
-        public string Name { get; set; }
+        [XmlAttribute("Value")]
+        public string Value { get; set; }
+
+        [XmlIgnore]
         public int OffsetString { get; set; }
+
+        [XmlIgnore]
         public int Length { get; set; }
+
+        [XmlIgnore]
+        public bool NameFound { get; set; }
 
         public static FpkString ReadFpkString(Stream input)
         {
@@ -26,13 +37,33 @@ namespace GzsTool.Fpk
 
             long endPosition = input.Position;
             input.Position = OffsetString;
-            Name = reader.ReadString(Length);
+            Value = reader.ReadString(Length);
             input.Position = endPosition;
         }
 
         public override string ToString()
         {
-            return Name;
+            return Value;
+        }
+
+        public bool ResolveString(byte[] md5Hash)
+        {
+            bool resolved;
+            byte[] entryNameHash = Hashing.Md5HashText(Value);
+
+            if (entryNameHash.SequenceEqual(md5Hash) == false)
+            {
+                string fileName;
+                resolved = Hashing.TryGetFileNameFromMd5Hash(md5Hash, Value, out fileName);
+                Value = fileName;
+            }
+            else
+            {
+                resolved = true;
+            }
+
+            NameFound = resolved;
+            return resolved;
         }
     }
 }

@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Serialization;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
+using GzsTool.Utility;
 
 namespace GzsTool
 {
@@ -58,12 +60,19 @@ namespace GzsTool
             string fileDirectory = Path.GetDirectoryName(path);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
             string outputDirectory = Path.Combine(fileDirectory, fileNameWithoutExtension);
+            string extension = Path.GetExtension(path).Replace(".", "");
+            string xmlOutputPath = Path.Combine(fileDirectory,
+                string.Format("{0}_{1}.xml", fileNameWithoutExtension, extension));
 
 
             using (FileStream input = new FileStream(path, FileMode.Open))
+            using (FileStream xmlOutStream = new FileStream(xmlOutputPath, FileMode.Create))
             {
                 GzsFile file = GzsFile.ReadGzsFile(input);
+                file.Name = Path.GetFileName(path);
                 file.ExportFiles(input, outputDirectory);
+                XmlSerializer serializer = new XmlSerializer(typeof (GzsFile));
+                serializer.Serialize(xmlOutStream, file);
             }
         }
 
@@ -87,39 +96,18 @@ namespace GzsTool
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
             string extension = Path.GetExtension(path).Replace(".", "");
             string outputDirectory = string.Format("{0}\\{1}_{2}", fileDirectory, fileNameWithoutExtension, extension);
+            string xmlOutputPath = Path.Combine(fileDirectory,
+                string.Format("{0}_{1}.xml", fileNameWithoutExtension, extension));
 
             using (FileStream input = new FileStream(path, FileMode.Open))
+            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
             {
                 FpkFile file = FpkFile.ReadFpkFile(input);
-
-                foreach (var entry in file.Entries)
-                {
-                    string fileName = GetFpkEntryFileName(entry);
-                    string outputPath = Path.Combine(outputDirectory, fileName);
-                    Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
-
-                    using (FileStream output = new FileStream(outputPath, FileMode.Create))
-                    {
-                        output.Write(entry.Data, 0, entry.Data.Length);
-                    }
-                }
+                file.Name = Path.GetFileName(path);
+                file.ExportEntries(outputDirectory);
+                XmlSerializer serializer = new XmlSerializer(typeof (FpkFile));
+                serializer.Serialize(xmlOutput, file);
             }
-        }
-
-        private static string GetFpkEntryFileName(FpkEntry entry)
-        {
-            byte[] entryNameHash = Hashing.Md5HashText(entry.FileName.Name);
-            string fileName = entryNameHash.SequenceEqual(entry.Md5Hash)
-                ? entry.FileName.Name
-                : Hashing.GetFileNameFromMd5Hash(entry.Md5Hash, entry.FileName.Name);
-            fileName = fileName.Replace("/", "\\");
-            int index = fileName.IndexOf(":", StringComparison.Ordinal);
-            if (index != -1)
-            {
-                fileName = fileName.Substring(index + 1, fileName.Length - index - 1);
-            }
-            fileName = fileName.StartsWith("\\") ? fileName.Substring(1, fileName.Length - 1) : fileName;
-            return fileName;
         }
 
         private static List<FileInfo> GetFileList(DirectoryInfo fileDirectory, bool recursively, List<string> extensions)

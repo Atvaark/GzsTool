@@ -1,24 +1,27 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace GzsTool.Fpk
 {
-    internal class FpkFile
+    [XmlRoot("FpkFile")]
+    public class FpkFile
     {
-        private readonly List<FpkEntry> _entries;
-        private readonly List<FpkReference> _references;
-
         public FpkFile()
         {
-            _entries = new List<FpkEntry>();
-            _references = new List<FpkReference>();
+            Entries = new List<FpkEntry>();
+            References = new List<FpkReference>();
         }
 
-        public ICollection<FpkEntry> Entries
-        {
-            get { return _entries; }
-        }
+        [XmlAttribute("Name")]
+        public string Name { get; set; }
+
+        [XmlArray("Entries")]
+        public List<FpkEntry> Entries { get; private set; }
+
+        [XmlArray("References")]
+        public List<FpkReference> References { get; private set; }
 
         public static FpkFile ReadFpkFile(Stream input)
         {
@@ -41,12 +44,27 @@ namespace GzsTool.Fpk
 
             for (int i = 0; i < fileCount; i++)
             {
-                _entries.Add(FpkEntry.ReadFpkEntry(input));
+                Entries.Add(FpkEntry.ReadFpkEntry(input));
             }
 
             for (int i = 0; i < referenceCount; i++)
             {
-                _references.Add(FpkReference.ReadFpkReference(input));
+                References.Add(FpkReference.ReadFpkReference(input));
+            }
+        }
+
+        public void ExportEntries(string outputDirectory)
+        {
+            foreach (var entry in Entries)
+            {
+                string fileName = entry.GetFpkEntryFileName();
+                string outputPath = Path.Combine(outputDirectory, fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+                using (FileStream output = new FileStream(outputPath, FileMode.Create))
+                {
+                    output.Write(entry.Data, 0, entry.Data.Length);
+                }
             }
         }
     }

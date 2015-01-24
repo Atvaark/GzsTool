@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 
-namespace GzsTool
+namespace GzsTool.Utility
 {
     internal class StructuralEqualityComparer<T> : IEqualityComparer<T>
     {
