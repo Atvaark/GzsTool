@@ -3,11 +3,23 @@ using System.Xml.Serialization;
 
 namespace GzsTool.Fpk
 {
-    [XmlType("Reference")]
+    [XmlType("Reference", Namespace = "Fpk")]
     public class FpkReference
     {
-        [XmlElement("FileName")]
-        public FpkString ReferenceFileName { get; set; }
+        public FpkReference()
+        {
+            ReferenceFilePath = new FpkString();
+        }
+
+        [XmlIgnore]
+        public FpkString ReferenceFilePath { get; set; }
+
+        [XmlAttribute("FilePath")]
+        public string FilePath
+        {
+            get { return ReferenceFilePath.Value; }
+            set { ReferenceFilePath.Value = value; }
+        }
 
         public static FpkReference ReadFpkReference(Stream input)
         {
@@ -18,7 +30,7 @@ namespace GzsTool.Fpk
 
         private void Read(Stream input)
         {
-            ReferenceFileName = FpkString.ReadFpkString(input);
+            ReferenceFilePath = FpkString.ReadFpkString(input);
         }
     }
 }

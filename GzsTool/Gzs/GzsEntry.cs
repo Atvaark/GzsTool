@@ -6,8 +6,8 @@ using GzsTool.Utility;
 
 namespace GzsTool.Gzs
 {
-    [XmlType("Entry")]
-    public class GzsArchiveEntry
+    [XmlType("Entry", Namespace = "Gzs")]
+    public class GzsEntry
     {
         [XmlAttribute("Hash")]
         public ulong Hash { get; set; }
@@ -29,11 +29,11 @@ namespace GzsTool.Gzs
             return FileNameFound == false;
         }
 
-        public static GzsArchiveEntry ReadGzArchiveEntry(Stream input)
+        public static GzsEntry ReadGzArchiveEntry(Stream input)
         {
-            GzsArchiveEntry gzsArchiveEntry = new GzsArchiveEntry();
-            gzsArchiveEntry.Read(input);
-            return gzsArchiveEntry;
+            GzsEntry gzsEntry = new GzsEntry();
+            gzsEntry.Read(input);
+            return gzsEntry;
         }
 
         public void Read(Stream input)

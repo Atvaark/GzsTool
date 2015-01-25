@@ -5,9 +5,14 @@ using System.Xml.Serialization;
 
 namespace GzsTool.Fpk
 {
-    [XmlType("Entry")]
+    [XmlType("Entry", Namespace = "Fpk")]
     public class FpkEntry
     {
+        public FpkEntry()
+        {
+            FilePathFpkString = new FpkString();
+        }
+
         [XmlIgnore]
         public byte[] Data { get; set; }
 
@@ -17,10 +22,17 @@ namespace GzsTool.Fpk
         [XmlIgnore]
         public int SizeDaza { get; set; }
 
-        [XmlElement]
-        public FpkString FileName { get; set; }
+        [XmlIgnore]
+        public FpkString FilePathFpkString { get; set; }
 
-        [XmlElement("Hash")]
+        [XmlAttribute("FilePath")]
+        public string FilePath
+        {
+            get { return FilePathFpkString.Value; }
+            set { FilePathFpkString.Value = value; }
+        }
+
+        [XmlAttribute("Hash")]
         public byte[] Md5Hash { get; set; }
 
         [XmlIgnore]
@@ -48,7 +60,7 @@ namespace GzsTool.Fpk
             FpkString fileName = FpkString.ReadFpkString(input);
             Md5Hash = reader.ReadBytes(16);
             FileNameFound = fileName.ResolveString(Md5Hash);
-            FileName = fileName;
+            FilePathFpkString = fileName;
 
             long endPosition = input.Position;
             input.Position = OffsetData;
@@ -58,7 +70,7 @@ namespace GzsTool.Fpk
 
         public string GetFpkEntryFileName()
         {
-            string fileName = FileName.Value;
+            string fileName = FilePathFpkString.Value;
 
 
             fileName = fileName.Replace("/", "\\");

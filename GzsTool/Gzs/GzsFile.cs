@@ -3,22 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 
 namespace GzsTool.Gzs
 {
-    [XmlRoot("GzsFile")]
-    public class GzsFile
+    [XmlType("GzsFile")]
+    public class GzsFile : ArchiveFile
     {
         public GzsFile()
         {
-            Entries = new List<GzsArchiveEntry>();
+            Entries = new List<GzsEntry>();
         }
 
         [XmlAttribute("Name")]
         public string Name { get; set; }
 
         [XmlArray("Entries")]
-        public List<GzsArchiveEntry> Entries { get; private set; }
+        public List<GzsEntry> Entries { get; private set; }
 
         public static GzsFile ReadGzsFile(Stream input)
         {
@@ -39,7 +40,7 @@ namespace GzsTool.Gzs
             input.Seek(16*footer.Unknown2, SeekOrigin.Begin);
             for (int i = 0; i < footer.ArchiveEntryCount; i++)
             {
-                Entries.Add(GzsArchiveEntry.ReadGzArchiveEntry(input));
+                Entries.Add(GzsEntry.ReadGzArchiveEntry(input));
             }
         }
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using GzsTool.Common;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
 using GzsTool.Utility;
@@ -66,14 +67,20 @@ namespace GzsTool
 
 
             using (FileStream input = new FileStream(path, FileMode.Open))
-            using (FileStream xmlOutStream = new FileStream(xmlOutputPath, FileMode.Create))
+            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
             {
                 GzsFile file = GzsFile.ReadGzsFile(input);
                 file.Name = Path.GetFileName(path);
                 file.ExportFiles(input, outputDirectory);
-                XmlSerializer serializer = new XmlSerializer(typeof (GzsFile));
-                serializer.Serialize(xmlOutStream, file);
+
+                var xmlSerializer = CreateArchiveSerializer();
+                xmlSerializer.Serialize(xmlOutput, file);
             }
+        }
+
+        public static XmlSerializer CreateArchiveSerializer()
+        {
+            return new XmlSerializer(typeof (ArchiveFile), new[] {typeof (FpkFile), typeof (GzsFile)});
         }
 
         private static void ReadFpkArchives(string path)
@@ -105,8 +112,6 @@ namespace GzsTool
                 FpkFile file = FpkFile.ReadFpkFile(input);
                 file.Name = Path.GetFileName(path);
                 file.ExportEntries(outputDirectory);
-                XmlSerializer serializer = new XmlSerializer(typeof (FpkFile));
-                serializer.Serialize(xmlOutput, file);
             }
         }
 

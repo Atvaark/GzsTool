@@ -2,11 +2,12 @@
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 
 namespace GzsTool.Fpk
 {
-    [XmlRoot("FpkFile")]
-    public class FpkFile
+    [XmlType("FpkFile")]
+    public class FpkFile : ArchiveFile
     {
         public FpkFile()
         {
