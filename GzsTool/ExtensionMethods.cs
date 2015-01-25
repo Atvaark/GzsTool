@@ -11,6 +11,12 @@ namespace GzsTool
             reader.BaseStream.Seek(count, SeekOrigin.Current);
         }
 
+        internal static void WriteZeros(this BinaryWriter writer, int count)
+        {
+            byte[] zeros = new byte[count];
+            writer.Write(zeros);
+        }
+
         internal static string ReadString(this BinaryReader binaryReader, int count)
         {
             return new string(binaryReader.ReadChars(count));

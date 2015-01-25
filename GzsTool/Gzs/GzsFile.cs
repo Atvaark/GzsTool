@@ -51,5 +51,10 @@ namespace GzsTool.Gzs
                 entry.ExportFile(input, outputDirectory);
             }
         }
+
+        public void Write(FileStream output)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

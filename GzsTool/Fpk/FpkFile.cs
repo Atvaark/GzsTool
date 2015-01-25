@@ -18,6 +18,9 @@ namespace GzsTool.Fpk
         [XmlAttribute("Name")]
         public string Name { get; set; }
 
+        [XmlAttribute("FpkType")]
+        public FpkType FpkType { get; set; }
+
         [XmlArray("Entries")]
         public List<FpkEntry> Entries { get; private set; }
 
@@ -36,9 +39,13 @@ namespace GzsTool.Fpk
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
 
             uint magicNumber1 = reader.ReadUInt32(); // foxf
-            uint magicNumber2 = reader.ReadUInt32(); // pk_x pk_p
-            uint magicNumber3 = reader.ReadUInt32(); // 3s__ 63__
-            reader.Skip(24);
+            ushort magicNumber2 = reader.ReadUInt16(); // pk
+            FpkType = (FpkType) reader.ReadByte(); // 
+            byte magicNumber3 = reader.ReadByte(); // s
+            ushort magicNumber4 = reader.ReadUInt16(); // te
+            uint fileSize = reader.ReadUInt32();
+            reader.Skip(18);
+            uint magicNumber5 = reader.ReadUInt32(); // 2
             uint fileCount = reader.ReadUInt32();
             uint referenceCount = reader.ReadUInt32();
             reader.Skip(4);
@@ -66,6 +73,58 @@ namespace GzsTool.Fpk
                 {
                     output.Write(entry.Data, 0, entry.Data.Length);
                 }
+            }
+        }
+
+        public void Write(FileStream output, string directory)
+        {
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            const int headerSize = 48;
+            int indicesSize = 48*Entries.Count;
+            int referenceSize = 16*References.Count;
+
+            long startPosition = output.Position;
+            output.Position += headerSize + indicesSize + referenceSize;
+
+            foreach (var fpkEntry in Entries)
+            {
+                fpkEntry.WriteFilePath(output);
+            }
+            foreach (var fpkReference in References)
+            {
+                fpkReference.WriteFilePath(output);
+            }
+            output.AlignWrite(16, 0x00);
+
+            foreach (var fpkEntry in Entries)
+            {
+                fpkEntry.WriteData(output, directory);
+                output.AlignWrite(16, 0x00);
+            }
+
+            uint fileSize = (uint) output.Position;
+
+            output.Position = startPosition;
+
+            writer.Write(0x66786f66); // foxf
+            writer.Write((ushort) 0x6B70); //pk
+            writer.Write((byte) FpkType);
+            writer.Write((byte) 0x73); // s
+            writer.Write((ushort) 0x6574); // te
+            writer.Write(fileSize);
+            writer.WriteZeros(18);
+            writer.Write(0x00000002);
+            writer.Write(Entries.Count);
+            writer.Write(References.Count);
+            writer.WriteZeros(4);
+
+            foreach (var fpkEntry in Entries)
+            {
+                fpkEntry.Write(output);
+            }
+            foreach (var fpkReference in References)
+            {
+                fpkReference.Write(output);
             }
         }
     }

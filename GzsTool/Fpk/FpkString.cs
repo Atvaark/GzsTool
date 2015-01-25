@@ -12,10 +12,10 @@ namespace GzsTool.Fpk
         public string Value { get; set; }
 
         [XmlIgnore]
-        public int OffsetString { get; set; }
+        public int StringOffset { get; set; }
 
         [XmlIgnore]
-        public int Length { get; set; }
+        public int StringLength { get; set; }
 
         [XmlIgnore]
         public bool NameFound { get; set; }
@@ -30,14 +30,14 @@ namespace GzsTool.Fpk
         private void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            OffsetString = reader.ReadInt32();
+            StringOffset = reader.ReadInt32();
             reader.Skip(4);
-            Length = reader.ReadInt32();
+            StringLength = reader.ReadInt32();
             reader.Skip(4);
 
             long endPosition = input.Position;
-            input.Position = OffsetString;
-            Value = reader.ReadString(Length);
+            input.Position = StringOffset;
+            Value = reader.ReadString(StringLength);
             input.Position = endPosition;
         }
 
@@ -64,6 +64,23 @@ namespace GzsTool.Fpk
 
             NameFound = resolved;
             return resolved;
+        }
+
+        public void WriteString(FileStream output)
+        {
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            StringOffset = (int) output.Position;
+            StringLength = Value.Length;
+            writer.WriteNullTerminatedString(Value);
+        }
+
+        public void Write(FileStream output)
+        {
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            writer.Write(StringOffset);
+            writer.WriteZeros(4);
+            writer.Write(StringLength);
+            writer.WriteZeros(4);
         }
     }
 }

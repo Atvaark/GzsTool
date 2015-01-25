@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Utility;
 
 namespace GzsTool.Fpk
 {
@@ -17,10 +18,10 @@ namespace GzsTool.Fpk
         public byte[] Data { get; set; }
 
         [XmlIgnore]
-        public uint OffsetData { get; set; }
+        public uint DataOffset { get; set; }
 
         [XmlIgnore]
-        public int SizeDaza { get; set; }
+        public int DataSize { get; set; }
 
         [XmlIgnore]
         public FpkString FilePathFpkString { get; set; }
@@ -53,9 +54,9 @@ namespace GzsTool.Fpk
         private void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            OffsetData = reader.ReadUInt32();
+            DataOffset = reader.ReadUInt32();
             reader.Skip(4);
-            SizeDaza = reader.ReadInt32();
+            DataSize = reader.ReadInt32();
             reader.Skip(4);
             FpkString fileName = FpkString.ReadFpkString(input);
             Md5Hash = reader.ReadBytes(16);
@@ -63,16 +64,14 @@ namespace GzsTool.Fpk
             FilePathFpkString = fileName;
 
             long endPosition = input.Position;
-            input.Position = OffsetData;
-            Data = reader.ReadBytes(SizeDaza);
+            input.Position = DataOffset;
+            Data = reader.ReadBytes(DataSize);
             input.Position = endPosition;
         }
 
         public string GetFpkEntryFileName()
         {
             string fileName = FilePathFpkString.Value;
-
-
             fileName = fileName.Replace("/", "\\");
             int index = fileName.IndexOf(":", StringComparison.Ordinal);
             if (index != -1)
@@ -81,6 +80,35 @@ namespace GzsTool.Fpk
             }
             fileName = fileName.StartsWith("\\") ? fileName.Substring(1, fileName.Length - 1) : fileName;
             return fileName;
+        }
+
+        public void WriteFilePath(FileStream output)
+        {
+            if (Md5Hash == null)
+                Md5Hash = Hashing.Md5HashText(FilePath);
+            FilePathFpkString.WriteString(output);
+        }
+
+        public void WriteData(FileStream output, string directory)
+        {
+            DataOffset = (uint) output.Position;
+            string path = Path.Combine(directory, GetFpkEntryFileName());
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            {
+                input.CopyTo(output);
+                DataSize = (int) input.Position;
+            }
+        }
+
+        public void Write(FileStream output)
+        {
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            writer.Write(DataOffset);
+            writer.WriteZeros(4);
+            writer.Write(DataSize);
+            writer.WriteZeros(4);
+            FilePathFpkString.Write(output);
+            writer.Write(Md5Hash);
         }
     }
 }
