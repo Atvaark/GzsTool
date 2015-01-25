@@ -94,5 +94,37 @@ namespace GzsTool.Gzs
             }
             return data;
         }
+
+        public void WriteData(FileStream output, string inputDirectory)
+        {
+            Offset = (uint) output.Position/16;
+
+            string inputFilePath = GetOutputPath(inputDirectory);
+            byte[] data;
+            using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
+            {
+                data = new byte[input.Length];
+                input.Read(data, 0, data.Length);
+            }
+            data = Encryption.DeEncryptQar(data, Offset);
+            // TODO: Encryption data if a key is set.
+
+            Size = (uint) data.Length;
+            output.Write(data, 0, data.Length);
+        }
+
+        public void Write(FileStream output)
+        {
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            writer.Write(Hash);
+            writer.Write(Offset);
+            writer.Write(Size);
+        }
+
+        public void CalculateHash()
+        {
+            if (Hash == 0)
+                Hash = Hashing.HashFileNameWithExtension(FilePath); //
+        }
     }
 }

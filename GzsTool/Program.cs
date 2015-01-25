@@ -12,7 +12,7 @@ namespace GzsTool
 {
     internal static class Program
     {
-        private static readonly XmlSerializer CreateArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
+        private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
             new[] {typeof (FpkFile), typeof (GzsFile)});
 
         private static void Main(string[] args)
@@ -70,9 +70,8 @@ namespace GzsTool
             string fileDirectory = Path.GetDirectoryName(path);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
             string outputDirectory = Path.Combine(fileDirectory, fileNameWithoutExtension);
-            string extension = Path.GetExtension(path).Replace(".", "");
             string xmlOutputPath = Path.Combine(fileDirectory,
-                string.Format("{0}_{1}.xml", fileNameWithoutExtension, extension));
+                string.Format("{0}.xml", Path.GetFileName(path)));
 
 
             using (FileStream input = new FileStream(path, FileMode.Open))
@@ -82,7 +81,7 @@ namespace GzsTool
                 file.Name = Path.GetFileName(path);
                 file.ExportFiles(input, outputDirectory);
 
-                CreateArchiveSerializer.Serialize(xmlOutput, file);
+                ArchiveSerializer.Serialize(xmlOutput, file);
             }
         }
 
@@ -116,7 +115,7 @@ namespace GzsTool
                 file.Name = Path.GetFileName(path);
                 file.ExportEntries(outputDirectory);
 
-                CreateArchiveSerializer.Serialize(xmlOutput, file);
+                ArchiveSerializer.Serialize(xmlOutput, file);
             }
         }
 
@@ -125,7 +124,7 @@ namespace GzsTool
             var directory = Path.GetDirectoryName(path);
             using (FileStream xmlInput = new FileStream(path, FileMode.Open))
             {
-                object file = CreateArchiveSerializer.Deserialize(xmlInput);
+                object file = ArchiveSerializer.Deserialize(xmlInput);
                 FpkFile fpkFile = file as FpkFile;
                 if (fpkFile != null)
                 {
@@ -141,9 +140,11 @@ namespace GzsTool
 
         private static void WriteGzsArchive(GzsFile gzsFile, string directory)
         {
-            using (FileStream output = new FileStream("test.g0s", FileMode.Create))
+            string outputPath = Path.Combine(directory, gzsFile.Name + ".test");
+            string inputDirectory = Path.Combine(directory, Path.GetFileNameWithoutExtension(gzsFile.Name));
+            using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
-                gzsFile.Write(output);
+                gzsFile.Write(output, inputDirectory);
             }
         }
 
