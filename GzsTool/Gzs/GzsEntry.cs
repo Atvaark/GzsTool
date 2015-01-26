@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 using GzsTool.Utility;
 
 namespace GzsTool.Gzs
@@ -47,25 +48,29 @@ namespace GzsTool.Gzs
             FilePath = filePath;
         }
 
-        public void ExportFile(Stream input, string outputDirectory)
+        public FileDataContainer Export(Stream input)
         {
-            var data = ReadFile(input);
-
-            string outputFilePath = GetOutputPath(outputDirectory);
-            Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
-            using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
+            FileDataContainer container = new FileDataContainer
             {
-                output.Write(data, 0, data.Length);
-            }
+                Data = ReadFile(input),
+                FileName = GetRelativeFilePath()
+            };
+            return container;
         }
 
-        private string GetOutputPath(string outputDirectory)
+        private string GetAbsoluteFilePath(string directory)
+        {
+            string filePath = GetRelativeFilePath();
+            return Path.Combine(directory, filePath);
+        }
+
+        private string GetRelativeFilePath()
         {
             string filePath = FilePath;
             if (filePath.StartsWith("/"))
                 filePath = filePath.Substring(1, filePath.Length - 1);
             filePath = filePath.Replace("/", "\\");
-            return Path.Combine(outputDirectory, filePath);
+            return filePath;
         }
 
         private bool TryGetFilePath(out string filePath)
@@ -95,11 +100,11 @@ namespace GzsTool.Gzs
             return data;
         }
 
-        public void WriteData(FileStream output, string inputDirectory)
+        public void WriteData(Stream output, string inputDirectory)
         {
             Offset = (uint) output.Position/16;
 
-            string inputFilePath = GetOutputPath(inputDirectory);
+            string inputFilePath = GetAbsoluteFilePath(inputDirectory);
             byte[] data;
             using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
             {
@@ -113,7 +118,7 @@ namespace GzsTool.Gzs
             output.Write(data, 0, data.Length);
         }
 
-        public void Write(FileStream output)
+        public void Write(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash);

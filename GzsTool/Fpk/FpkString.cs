@@ -66,7 +66,7 @@ namespace GzsTool.Fpk
             return resolved;
         }
 
-        public void WriteString(FileStream output)
+        public void WriteString(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             StringOffset = (int) output.Position;
@@ -74,7 +74,7 @@ namespace GzsTool.Fpk
             writer.WriteNullTerminatedString(Value);
         }
 
-        public void Write(FileStream output)
+        public void Write(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(StringOffset);

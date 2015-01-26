@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 using GzsTool.Utility;
 
 namespace GzsTool.Fpk
@@ -69,7 +70,7 @@ namespace GzsTool.Fpk
             input.Position = endPosition;
         }
 
-        public string GetFpkEntryFileName()
+        private string GetFpkEntryFileName()
         {
             string fileName = FilePathFpkString.Value;
             fileName = fileName.Replace("/", "\\");
@@ -82,14 +83,14 @@ namespace GzsTool.Fpk
             return fileName;
         }
 
-        public void WriteFilePath(FileStream output)
+        public void WriteFilePath(Stream output)
         {
             if (Md5Hash == null)
                 Md5Hash = Hashing.Md5HashText(FilePath);
             FilePathFpkString.WriteString(output);
         }
 
-        public void WriteData(FileStream output, string directory)
+        public void WriteData(Stream output, string directory)
         {
             DataOffset = (uint) output.Position;
             string path = Path.Combine(directory, GetFpkEntryFileName());
@@ -100,7 +101,7 @@ namespace GzsTool.Fpk
             }
         }
 
-        public void Write(FileStream output)
+        public void Write(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(DataOffset);
@@ -109,6 +110,16 @@ namespace GzsTool.Fpk
             writer.WriteZeros(4);
             FilePathFpkString.Write(output);
             writer.Write(Md5Hash);
+        }
+
+        public FileDataContainer Export()
+        {
+            FileDataContainer container = new FileDataContainer
+            {
+                Data = Data,
+                FileName = GetFpkEntryFileName()
+            };
+            return container;
         }
     }
 }

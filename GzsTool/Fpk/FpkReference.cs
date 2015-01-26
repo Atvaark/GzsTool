@@ -33,12 +33,12 @@ namespace GzsTool.Fpk
             ReferenceFilePath = FpkString.ReadFpkString(input);
         }
 
-        public void WriteFilePath(FileStream output)
+        public void WriteFilePath(Stream output)
         {
             ReferenceFilePath.WriteString(output);
         }
 
-        public void Write(FileStream output)
+        public void Write(Stream output)
         {
             ReferenceFilePath.Write(output);
         }

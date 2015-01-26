@@ -17,110 +17,6 @@ namespace GzsTool.Utility
         private static readonly Dictionary<byte[], string> Md5HashNameDictionary =
             new Dictionary<byte[], string>(new StructuralEqualityComparer<byte[]>());
 
-        private static ulong HashFileName(string text)
-        {
-            if (text == null) throw new ArgumentNullException("text");
-            const ulong seed0 = 0x9ae16a3b2f90404f;
-            ulong seed1 = text.Length > 0 ? (uint) ((text[0]) << 16) + (uint) text.Length : 0;
-            return CityHash.CityHash.CityHash64WithSeeds(text + "\0", seed0, seed1) & 0xFFFFFFFFFFFF;
-        }
-
-        public static ulong HashFileNameWithExtension(string filePath)
-        {
-            var lookupableExtensions = TypeExtensions
-                .Where(e => e.Value != "" && filePath.EndsWith(e.Value, StringComparison.InvariantCultureIgnoreCase))
-                .ToList();
-
-            string hashablePart = filePath;
-            int typeId = 0;
-            if (lookupableExtensions.Count() == 1)
-            {
-                var lookupableExtension = lookupableExtensions.Single();
-                typeId = lookupableExtension.Key;
-
-                int extensionIndex = filePath.LastIndexOf(lookupableExtension.Value, StringComparison.InvariantCultureIgnoreCase);
-                hashablePart = filePath.Substring(0, extensionIndex);
-            }
-            ulong hash = HashFileName(hashablePart);
-            hash = hash + ((ulong) typeId << 52);
-            return hash;
-        }
-
-        internal static bool TryGetFileNameFromHash(ulong hash, int fileExtensionId, out string fileName)
-        {
-            string fileExtension = TypeExtensions[fileExtensionId];
-            ulong hashMasked = hash & 0xFFFFFFFFFFFF;
-
-            bool fileNameFound = HashNameDictionary.TryGetValue(hashMasked, out fileName);
-            if (fileNameFound == false)
-            {
-                fileName = String.Format("{0:x}", hashMasked);
-            }
-
-            fileName = String.Format("{0}{1}", fileName, fileExtension);
-            return fileNameFound;
-        }
-
-        public static void ReadDictionary(string path)
-        {
-            foreach (var line in File.ReadAllLines(path))
-            {
-                ulong hash = HashFileName(line);
-                if (HashNameDictionary.ContainsKey(hash) == false)
-                {
-                    HashNameDictionary.Add(hash, line);
-                }
-            }
-        }
-
-        internal static byte[] Md5HashText(string text)
-        {
-            return Md5.ComputeHash(Encoding.Default.GetBytes(text));
-        }
-
-        public static void ReadMd5Dictionary(string path)
-        {
-            foreach (var line in File.ReadAllLines(path))
-            {
-                byte[] md5Hash = Md5HashText(line);
-                if (Md5HashNameDictionary.ContainsKey(md5Hash) == false)
-                {
-                    Md5HashNameDictionary.Add(md5Hash, line);
-                }
-            }
-        }
-
-        internal static bool TryGetFileNameFromMd5Hash(byte[] md5Hash, string entryName, out string fileName)
-        {
-            if (Md5HashNameDictionary.TryGetValue(md5Hash, out fileName) == false)
-            {
-                fileName = string.Format("{0}{1}", BitConverter.ToString(md5Hash).Replace("-", ""),
-                    GetFileExtension(entryName));
-                return false;
-            }
-            return true;
-        }
-
-        private static string GetFileExtension(string entryName)
-        {
-            string extension = "";
-            int index = entryName.LastIndexOf(".", StringComparison.Ordinal);
-            if (index != -1)
-            {
-                extension = entryName.Substring(index, entryName.Length - index);
-            }
-
-            return extension;
-        }
-
-        public static void ReadPs3PathIdFile(string path)
-        {
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            {
-                PathIdFile.Read(input);
-            }
-        }
-
         private static readonly Dictionary<int, string> TypeExtensions = new Dictionary<int, string>
         {
             {0, ""},
@@ -232,5 +128,109 @@ namespace GzsTool.Utility
             {106, ".uilb"}
         };
 
+        private static ulong HashFileName(string text)
+        {
+            if (text == null) throw new ArgumentNullException("text");
+            const ulong seed0 = 0x9ae16a3b2f90404f;
+            ulong seed1 = text.Length > 0 ? (uint) ((text[0]) << 16) + (uint) text.Length : 0;
+            return CityHash.CityHash.CityHash64WithSeeds(text + "\0", seed0, seed1) & 0xFFFFFFFFFFFF;
+        }
+
+        public static ulong HashFileNameWithExtension(string filePath)
+        {
+            var lookupableExtensions = TypeExtensions
+                .Where(e => e.Value != "" && filePath.EndsWith(e.Value, StringComparison.InvariantCultureIgnoreCase))
+                .ToList();
+
+            string hashablePart = filePath;
+            int typeId = 0;
+            if (lookupableExtensions.Count() == 1)
+            {
+                var lookupableExtension = lookupableExtensions.Single();
+                typeId = lookupableExtension.Key;
+
+                int extensionIndex = filePath.LastIndexOf(lookupableExtension.Value,
+                    StringComparison.InvariantCultureIgnoreCase);
+                hashablePart = filePath.Substring(0, extensionIndex);
+            }
+            ulong hash = HashFileName(hashablePart);
+            hash = hash + ((ulong) typeId << 52);
+            return hash;
+        }
+
+        internal static bool TryGetFileNameFromHash(ulong hash, int fileExtensionId, out string fileName)
+        {
+            string fileExtension = TypeExtensions[fileExtensionId];
+            ulong hashMasked = hash & 0xFFFFFFFFFFFF;
+
+            bool fileNameFound = HashNameDictionary.TryGetValue(hashMasked, out fileName);
+            if (fileNameFound == false)
+            {
+                fileName = String.Format("{0:x}", hashMasked);
+            }
+
+            fileName = String.Format("{0}{1}", fileName, fileExtension);
+            return fileNameFound;
+        }
+
+        public static void ReadDictionary(string path)
+        {
+            foreach (var line in File.ReadAllLines(path))
+            {
+                ulong hash = HashFileName(line);
+                if (HashNameDictionary.ContainsKey(hash) == false)
+                {
+                    HashNameDictionary.Add(hash, line);
+                }
+            }
+        }
+
+        internal static byte[] Md5HashText(string text)
+        {
+            return Md5.ComputeHash(Encoding.Default.GetBytes(text));
+        }
+
+        public static void ReadMd5Dictionary(string path)
+        {
+            foreach (var line in File.ReadAllLines(path))
+            {
+                byte[] md5Hash = Md5HashText(line);
+                if (Md5HashNameDictionary.ContainsKey(md5Hash) == false)
+                {
+                    Md5HashNameDictionary.Add(md5Hash, line);
+                }
+            }
+        }
+
+        internal static bool TryGetFileNameFromMd5Hash(byte[] md5Hash, string entryName, out string fileName)
+        {
+            if (Md5HashNameDictionary.TryGetValue(md5Hash, out fileName) == false)
+            {
+                fileName = string.Format("{0}{1}", BitConverter.ToString(md5Hash).Replace("-", ""),
+                    GetFileExtension(entryName));
+                return false;
+            }
+            return true;
+        }
+
+        private static string GetFileExtension(string entryName)
+        {
+            string extension = "";
+            int index = entryName.LastIndexOf(".", StringComparison.Ordinal);
+            if (index != -1)
+            {
+                extension = entryName.Substring(index, entryName.Length - index);
+            }
+
+            return extension;
+        }
+
+        public static void ReadPs3PathIdFile(string path)
+        {
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            {
+                PathIdFile.Read(input);
+            }
+        }
     }
 }

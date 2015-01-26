@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Fpk;
@@ -17,12 +18,9 @@ namespace GzsTool
 
         private static void Main(string[] args)
         {
-            Hashing.ReadPs3PathIdFile("pathid_list_ps3.bin");
-            Hashing.ReadDictionary("dictionary.txt");
-            Hashing.ReadMd5Dictionary("fpk_dict.txt");
-
             if (args.Length == 1)
             {
+                ReadDictionaries();
                 string path = args[0];
                 if (File.Exists(path))
                 {
@@ -52,6 +50,33 @@ namespace GzsTool
             ShowUsageInfo();
         }
 
+        private static void ReadDictionaries()
+        {
+            string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            const string gzsDictionaryName = "gzs_dictionary.txt";
+            const string fpkDictionaryName = "fpk_dictionary.txt";
+            // TODO: Enable reading the ps3 file when there is actually a need for it.
+            ////Hashing.ReadPs3PathIdFile(Path.Combine(executingAssemblyLocation, "pathid_list_ps3.bin"));
+            try
+            {
+                Console.WriteLine("Reading {0}", gzsDictionaryName);
+                Hashing.ReadDictionary(Path.Combine(executingAssemblyLocation, gzsDictionaryName));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error reading {0}: {1}", gzsDictionaryName, e.Message);
+            }
+            try
+            {
+                Console.WriteLine("Reading {0}", fpkDictionaryName);
+                Hashing.ReadMd5Dictionary(Path.Combine(executingAssemblyLocation, fpkDictionaryName));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error reading {0}: {1}", fpkDictionaryName, e.Message);
+            }
+        }
+
         private static void ShowUsageInfo()
         {
             Console.WriteLine("GzsTool by Atvaark\n" +
@@ -73,15 +98,17 @@ namespace GzsTool
             string xmlOutputPath = Path.Combine(fileDirectory,
                 string.Format("{0}.xml", Path.GetFileName(path)));
 
-
             using (FileStream input = new FileStream(path, FileMode.Open))
             using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
             {
-                GzsFile file = GzsFile.ReadGzsFile(input);
-                file.Name = Path.GetFileName(path);
-                file.ExportFiles(input, outputDirectory);
-
-                ArchiveSerializer.Serialize(xmlOutput, file);
+                GzsFile gzsFile = GzsFile.ReadGzsFile(input);
+                gzsFile.Name = Path.GetFileName(path);
+                foreach (var exportedFile in gzsFile.ExportFiles(input))
+                {
+                    Console.WriteLine(exportedFile.FileName);
+                    WriteExportedFile(exportedFile, outputDirectory);
+                }
+                ArchiveSerializer.Serialize(xmlOutput, gzsFile);
             }
         }
 
@@ -92,7 +119,7 @@ namespace GzsTool
                 ".fpk",
                 ".fpkd"
             };
-            var files = GetFileList(new DirectoryInfo(path), true, extensions);
+            var files = GetFilesWithExtension(new DirectoryInfo(path), extensions);
             foreach (var file in files)
             {
                 ReadFpkArchive(file.FullName);
@@ -111,11 +138,24 @@ namespace GzsTool
             using (FileStream input = new FileStream(path, FileMode.Open))
             using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
             {
-                FpkFile file = FpkFile.ReadFpkFile(input);
-                file.Name = Path.GetFileName(path);
-                file.ExportEntries(outputDirectory);
+                FpkFile fpkFile = FpkFile.ReadFpkFile(input);
+                fpkFile.Name = Path.GetFileName(path);
+                foreach (var exportedFile in fpkFile.ExportFiles())
+                {
+                    Console.WriteLine(exportedFile.FileName);
+                    WriteExportedFile(exportedFile, outputDirectory);
+                }
+                ArchiveSerializer.Serialize(xmlOutput, fpkFile);
+            }
+        }
 
-                ArchiveSerializer.Serialize(xmlOutput, file);
+        private static void WriteExportedFile(FileDataContainer fileDataContainer, string outputDirectory)
+        {
+            string outputPath = Path.Combine(outputDirectory, fileDataContainer.FileName);
+            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+            using (FileStream output = new FileStream(outputPath, FileMode.Create))
+            {
+                output.Write(fileDataContainer.Data, 0, fileDataContainer.Data.Length);
             }
         }
 
@@ -159,20 +199,15 @@ namespace GzsTool
             }
         }
 
-        private static List<FileInfo> GetFileList(DirectoryInfo fileDirectory, bool recursively, List<string> extensions)
+        private static IEnumerable<FileInfo> GetFilesWithExtension(DirectoryInfo fileDirectory,
+            ICollection<string> extensions)
         {
-            List<FileInfo> files = new List<FileInfo>();
-            if (recursively)
+            foreach (var file in fileDirectory.GetFiles("*", SearchOption.AllDirectories))
             {
-                foreach (var directory in fileDirectory.GetDirectories())
-                {
-                    files.AddRange(GetFileList(directory, recursively, extensions));
-                }
+                string extension = Path.GetExtension(file.FullName);
+                if (extensions.Contains(extension, StringComparer.InvariantCultureIgnoreCase))
+                    yield return file;
             }
-            files.AddRange(
-                fileDirectory.GetFiles()
-                    .Where(f => extensions.Contains(f.Extension, StringComparer.CurrentCultureIgnoreCase)));
-            return files;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace GzsTool.Gzs
             }
         }
 
-        public void Write(FileStream output)
+        public void Write(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(ArchiveEntryCount);

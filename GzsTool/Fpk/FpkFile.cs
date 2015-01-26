@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
@@ -40,7 +41,7 @@ namespace GzsTool.Fpk
 
             uint magicNumber1 = reader.ReadUInt32(); // foxf
             ushort magicNumber2 = reader.ReadUInt16(); // pk
-            FpkType = (FpkType) reader.ReadByte(); // 
+            FpkType = (FpkType) reader.ReadByte(); // ' ' or 'd'
             byte magicNumber3 = reader.ReadByte(); // s
             ushort magicNumber4 = reader.ReadUInt16(); // te
             uint fileSize = reader.ReadUInt32();
@@ -61,22 +62,12 @@ namespace GzsTool.Fpk
             }
         }
 
-        public void ExportEntries(string outputDirectory)
+        public IEnumerable<FileDataContainer> ExportFiles()
         {
-            foreach (var entry in Entries)
-            {
-                string fileName = entry.GetFpkEntryFileName();
-                string outputPath = Path.Combine(outputDirectory, fileName);
-                Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
-
-                using (FileStream output = new FileStream(outputPath, FileMode.Create))
-                {
-                    output.Write(entry.Data, 0, entry.Data.Length);
-                }
-            }
+            return Entries.Select(fpkEntry => fpkEntry.Export());
         }
 
-        public void Write(FileStream output, string directory)
+        public void Write(Stream output, string directory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             const int headerSize = 48;
