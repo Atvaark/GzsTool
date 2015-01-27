@@ -80,14 +80,17 @@ namespace GzsTool
         private static void ShowUsageInfo()
         {
             Console.WriteLine("GzsTool by Atvaark\n" +
-                              "  A tool for unpacking g0s, fpk and fpkd files\n" +
+                              "  A tool for unpacking and repacking g0s, fpk and fpkd files\n" +
                               "Usage:\n" +
                               "  GzsTool file_path|folder_path\n" +
                               "Examples:\n" +
-                              "  GzsTool file_path.g0s  - Unpacks the g0s file\n" +
-                              "  GzsTool file_path.fpk  - Unpacks the fpk file\n" +
-                              "  GzsTool file_path.fpkd - Unpacks the fpkd file\n" +
-                              "  GzsTool folder_path    - Unpacks all fpk and fpkd files in the folder");
+                              "  GzsTool file_path.g0s      - Unpacks the g0s file\n" +
+                              "  GzsTool file_path.fpk      - Unpacks the fpk file\n" +
+                              "  GzsTool file_path.fpkd     - Unpacks the fpkd file\n" +
+                              "  GzsTool folder_path        - Unpacks all fpk and fpkd files in the folder\n" +
+                              "  GzsTool file_path.g0s.xml  - Repacks the g0s file\n" +
+                              "  GzsTool file_path.fpk.xml  - Repacks the fpk file\n" +
+                              "  GzsTool file_path.fpkd.xml - Repacks the fpkd file");
         }
 
         private static void ReadGzsArchive(string path)
