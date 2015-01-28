@@ -1,24 +1,22 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml.Serialization;
 using GzsTool.Utility;
 
 namespace GzsTool.Fpk
 {
     public class FpkString
     {
-        [XmlAttribute("Value")]
         public string Value { get; set; }
-
-        [XmlIgnore]
+        public byte[] EncryptedValue { get; set; }
         public int StringOffset { get; set; }
-
-        [XmlIgnore]
         public int StringLength { get; set; }
+        public bool ValueResolved { get; set; }
 
-        [XmlIgnore]
-        public bool NameFound { get; set; }
+        public bool ValueEncrypted
+        {
+            get { return EncryptedValue != null; }
+        }
 
         public static FpkString ReadFpkString(Stream input)
         {
@@ -46,32 +44,33 @@ namespace GzsTool.Fpk
             return Value;
         }
 
-        public bool ResolveString(byte[] md5Hash)
+        public void ResolveString(byte[] md5Hash)
         {
             bool resolved;
             byte[] entryNameHash = Hashing.Md5HashText(Value);
 
             if (entryNameHash.SequenceEqual(md5Hash) == false)
             {
-                string fileName;
-                resolved = Hashing.TryGetFileNameFromMd5Hash(md5Hash, Value, out fileName);
-                Value = fileName;
+                EncryptedValue = Encoding.Default.GetBytes(Value);
+                string resolvedValue;
+                resolved = Hashing.TryGetFileNameFromMd5Hash(md5Hash, Value, out resolvedValue);
+                Value = resolvedValue;
             }
             else
             {
                 resolved = true;
             }
 
-            NameFound = resolved;
-            return resolved;
+            ValueResolved = resolved;
         }
 
         public void WriteString(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             StringOffset = (int) output.Position;
-            StringLength = Value.Length;
-            writer.WriteNullTerminatedString(Value);
+            string value = ValueEncrypted ? Encoding.Default.GetString(EncryptedValue) : Value;
+            StringLength = value.Length;
+            writer.WriteNullTerminatedString(value);
         }
 
         public void Write(Stream output)

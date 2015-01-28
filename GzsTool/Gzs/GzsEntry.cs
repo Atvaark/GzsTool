@@ -112,7 +112,7 @@ namespace GzsTool.Gzs
                 input.Read(data, 0, data.Length);
             }
             data = Encryption.DeEncryptQar(data, Offset);
-            // TODO: Encryption data if a key is set.
+            // TODO: Encrypt the data if a key is set for the entry.
 
             Size = (uint) data.Length;
             output.Write(data, 0, data.Length);

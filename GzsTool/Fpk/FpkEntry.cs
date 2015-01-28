@@ -37,12 +37,21 @@ namespace GzsTool.Fpk
         [XmlAttribute("Hash")]
         public byte[] Md5Hash { get; set; }
 
-        [XmlIgnore]
-        public bool FileNameFound { get; set; }
+        [XmlAttribute("EncryptedFilePath")]
+        public byte[] EncryptedFilePath
+        {
+            get { return FilePathFpkString.EncryptedValue; }
+            set { FilePathFpkString.EncryptedValue = value; }
+        }
 
         public bool ShouldSerializeMd5Hash()
         {
-            return FileNameFound == false;
+            return FilePathFpkString.ValueResolved == false;
+        }
+
+        public bool ShouldSerializeFilePath()
+        {
+            return FilePathFpkString.ValueEncrypted;
         }
 
         public static FpkEntry ReadFpkEntry(Stream input)
@@ -61,7 +70,7 @@ namespace GzsTool.Fpk
             reader.Skip(4);
             FpkString fileName = FpkString.ReadFpkString(input);
             Md5Hash = reader.ReadBytes(16);
-            FileNameFound = fileName.ResolveString(Md5Hash);
+            fileName.ResolveString(Md5Hash);
             FilePathFpkString = fileName;
 
             long endPosition = input.Position;

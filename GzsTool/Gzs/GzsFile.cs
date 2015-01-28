@@ -55,8 +55,8 @@ namespace GzsTool.Gzs
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             foreach (var gzsEntry in Entries)
             {
+                // TODO: Write the key magic number, the key and increase the entry size by 8 bytes.
                 gzsEntry.WriteData(output, inputDirectory);
-                // TODO: Write the key instead of 8 zeros.
                 output.AlignWrite(16, 0x00);
             }
 
