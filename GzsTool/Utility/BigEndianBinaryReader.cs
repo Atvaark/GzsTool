@@ -37,7 +37,12 @@ namespace GzsTool.Utility
 
         public override decimal ReadDecimal()
         {
-            throw new NotImplementedException();
+            byte[] buffer =  Reverse(ReadBytesRequired(sizeof(decimal)));
+            var i1 = BitConverter.ToInt32(buffer, 0);
+            var i2 = BitConverter.ToInt32(buffer, 4);
+            var i3 = BitConverter.ToInt32(buffer, 8);
+            var i4 = BitConverter.ToInt32(buffer, 12);
+            return new decimal(new[] { i1, i2, i3, i4 });
         }
 
         public override double ReadDouble()
@@ -79,5 +84,8 @@ namespace GzsTool.Utility
         {
             return BitConverter.ToUInt64(Reverse(ReadBytesRequired(sizeof (UInt64))), 0);
         }
+
+
+
     }
 }

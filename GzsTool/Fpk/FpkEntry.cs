@@ -48,12 +48,7 @@ namespace GzsTool.Fpk
         {
             return FilePathFpkString.ValueResolved == false;
         }
-
-        public bool ShouldSerializeFilePath()
-        {
-            return FilePathFpkString.ValueEncrypted;
-        }
-
+        
         public static FpkEntry ReadFpkEntry(Stream input)
         {
             FpkEntry fpkEntry = new FpkEntry();
