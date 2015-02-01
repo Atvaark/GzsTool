@@ -16,9 +16,6 @@ namespace GzsTool.Fpk
         }
 
         [XmlIgnore]
-        public byte[] Data { get; set; }
-
-        [XmlIgnore]
         public uint DataOffset { get; set; }
 
         [XmlIgnore]
@@ -48,7 +45,7 @@ namespace GzsTool.Fpk
         {
             return FilePathFpkString.ValueResolved == false;
         }
-        
+
         public static FpkEntry ReadFpkEntry(Stream input)
         {
             FpkEntry fpkEntry = new FpkEntry();
@@ -67,11 +64,16 @@ namespace GzsTool.Fpk
             Md5Hash = reader.ReadBytes(16);
             fileName.ResolveString(Md5Hash);
             FilePathFpkString = fileName;
+        }
 
-            long endPosition = input.Position;
+        private byte[] ReadData(Stream input)
+        {
+            BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
+            long startPosition = input.Position;
             input.Position = DataOffset;
-            Data = reader.ReadBytes(DataSize);
-            input.Position = endPosition;
+            byte[] data = reader.ReadBytes(DataSize);
+            input.Position = startPosition;
+            return data;
         }
 
         private string GetFpkEntryFileName()
@@ -94,17 +96,6 @@ namespace GzsTool.Fpk
             FilePathFpkString.WriteString(output);
         }
 
-        public void WriteData(Stream output, string directory)
-        {
-            DataOffset = (uint) output.Position;
-            string path = Path.Combine(directory, GetFpkEntryFileName());
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            {
-                input.CopyTo(output);
-                DataSize = (int) input.Position;
-            }
-        }
-
         public void Write(Stream output)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
@@ -116,11 +107,22 @@ namespace GzsTool.Fpk
             writer.Write(Md5Hash);
         }
 
-        public FileDataContainer Export()
+        public void WriteData(Stream output, string inputDirectory)
+        {
+            DataOffset = (uint) output.Position;
+            string path = Path.Combine(inputDirectory, GetFpkEntryFileName());
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            {
+                input.CopyTo(output);
+                DataSize = (int) input.Position;
+            }
+        }
+
+        public FileDataContainer Export(Stream input)
         {
             FileDataContainer container = new FileDataContainer
             {
-                Data = Data,
+                Data = ReadData(input),
                 FileName = GetFpkEntryFileName()
             };
             return container;

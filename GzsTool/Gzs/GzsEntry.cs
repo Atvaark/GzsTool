@@ -30,7 +30,7 @@ namespace GzsTool.Gzs
             return FileNameFound == false;
         }
 
-        public static GzsEntry ReadGzArchiveEntry(Stream input)
+        public static GzsEntry ReadGzsEntry(Stream input)
         {
             GzsEntry gzsEntry = new GzsEntry();
             gzsEntry.Read(input);
@@ -48,39 +48,7 @@ namespace GzsTool.Gzs
             FilePath = filePath;
         }
 
-        public FileDataContainer Export(Stream input)
-        {
-            FileDataContainer container = new FileDataContainer
-            {
-                Data = ReadFile(input),
-                FileName = GetRelativeFilePath()
-            };
-            return container;
-        }
-
-        private string GetAbsoluteFilePath(string directory)
-        {
-            string filePath = GetRelativeFilePath();
-            return Path.Combine(directory, filePath);
-        }
-
-        private string GetRelativeFilePath()
-        {
-            string filePath = FilePath;
-            if (filePath.StartsWith("/"))
-                filePath = filePath.Substring(1, filePath.Length - 1);
-            filePath = filePath.Replace("/", "\\");
-            return filePath;
-        }
-
-        private bool TryGetFilePath(out string filePath)
-        {
-            int fileExtensionId = (int) (Hash >> 52 & 0xFFFF);
-            bool fileNameFound = Hashing.TryGetFileNameFromHash(Hash, fileExtensionId, out filePath);
-            return fileNameFound;
-        }
-
-        private byte[] ReadFile(Stream input)
+        private byte[] ReadData(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             uint dataOffset = 16*Offset;
@@ -98,6 +66,28 @@ namespace GzsTool.Gzs
                 data = Encryption.DeEncrypt(data2, key);
             }
             return data;
+        }
+
+        private string GetRelativeFilePath()
+        {
+            string filePath = FilePath;
+            if (filePath.StartsWith("/"))
+                filePath = filePath.Substring(1, filePath.Length - 1);
+            filePath = filePath.Replace("/", "\\");
+            return filePath;
+        }
+
+        private string GetAbsoluteFilePath(string directory)
+        {
+            string filePath = GetRelativeFilePath();
+            return Path.Combine(directory, filePath);
+        }
+
+        private bool TryGetFilePath(out string filePath)
+        {
+            int fileExtensionId = (int) (Hash >> 52 & 0xFFFF);
+            bool fileNameFound = Hashing.TryGetFileNameFromHash(Hash, fileExtensionId, out filePath);
+            return fileNameFound;
         }
 
         public void WriteData(Stream output, string inputDirectory)
@@ -130,6 +120,16 @@ namespace GzsTool.Gzs
         {
             if (Hash == 0)
                 Hash = Hashing.HashFileNameWithExtension(FilePath); //
+        }
+
+        public FileDataContainer Export(Stream input)
+        {
+            FileDataContainer container = new FileDataContainer
+            {
+                Data = ReadData(input),
+                FileName = GetRelativeFilePath()
+            };
+            return container;
         }
     }
 }

@@ -35,10 +35,9 @@ namespace GzsTool.Fpk
             return fpkFile;
         }
 
-        public void Read(Stream input)
+        public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-
             uint magicNumber1 = reader.ReadUInt32(); // foxf
             ushort magicNumber2 = reader.ReadUInt16(); // pk
             FpkType = (FpkType) reader.ReadByte(); // ' ' or 'd'
@@ -62,12 +61,12 @@ namespace GzsTool.Fpk
             }
         }
 
-        public IEnumerable<FileDataContainer> ExportFiles()
+        public override IEnumerable<FileDataContainer> ExportFiles(Stream input)
         {
-            return Entries.Select(fpkEntry => fpkEntry.Export());
+            return Entries.Select(fpkEntry => fpkEntry.Export(input));
         }
 
-        public void Write(Stream output, string directory)
+        public override void Write(Stream output, string directory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             const int headerSize = 48;

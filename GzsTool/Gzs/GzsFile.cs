@@ -29,7 +29,7 @@ namespace GzsTool.Gzs
             return gzsFile;
         }
 
-        private void Read(Stream input)
+        public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             input.Seek(-4, SeekOrigin.End);
@@ -41,16 +41,16 @@ namespace GzsTool.Gzs
             input.Seek(16*footer.EntryBlockOffset, SeekOrigin.Begin);
             for (int i = 0; i < footer.ArchiveEntryCount; i++)
             {
-                Entries.Add(GzsEntry.ReadGzArchiveEntry(input));
+                Entries.Add(GzsEntry.ReadGzsEntry(input));
             }
         }
 
-        public IEnumerable<FileDataContainer> ExportFiles(Stream input)
+        public override IEnumerable<FileDataContainer> ExportFiles(Stream input)
         {
             return Entries.Select(gzsEntry => gzsEntry.Export(input));
         }
 
-        public void Write(Stream output, string inputDirectory)
+        public override void Write(Stream output, string inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             foreach (var gzsEntry in Entries)

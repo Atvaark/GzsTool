@@ -143,7 +143,7 @@ namespace GzsTool
             {
                 FpkFile fpkFile = FpkFile.ReadFpkFile(input);
                 fpkFile.Name = Path.GetFileName(path);
-                foreach (var exportedFile in fpkFile.ExportFiles())
+                foreach (var exportedFile in fpkFile.ExportFiles(input))
                 {
                     Console.WriteLine(exportedFile.FileName);
                     WriteExportedFile(exportedFile, outputDirectory);
