@@ -52,6 +52,13 @@
     <Compile Include="Common\FileSystemDirectory.cs" />
     <Compile Include="Common\VirtualFileSystemDirectory.cs" />
     <Compile Include="Fpk\FpkType.cs" />
+    <Compile Include="Pftxs\PftxsFile.cs" />
+    <Compile Include="Pftxs\PftxsFileEntry.cs" />
+    <Compile Include="Pftxs\PftxsLogEntry.cs" />
+    <Compile Include="Pftxs\PftxsLogFile.cs" />
+    <Compile Include="Pftxs\PftxsUtility.cs" />
+    <Compile Include="Pftxs\Psub\PsubFile.cs" />
+    <Compile Include="Pftxs\Psub\PsubFileEntry.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Utility\Encryption.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />

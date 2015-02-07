@@ -7,6 +7,7 @@ using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
+using GzsTool.Pftxs;
 using GzsTool.Utility;
 
 namespace GzsTool
@@ -34,6 +35,10 @@ namespace GzsTool
                     {
                         ReadFpkArchive(path);
                         return;
+                    }
+                    if (path.EndsWith(".pftxs", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        ReadPftxsArchive(path);
                     }
                     if (path.EndsWith(".xml", StringComparison.CurrentCultureIgnoreCase))
                     {
@@ -80,17 +85,19 @@ namespace GzsTool
         private static void ShowUsageInfo()
         {
             Console.WriteLine("GzsTool by Atvaark\n" +
-                              "  A tool for unpacking and repacking g0s, fpk and fpkd files\n" +
+                              "  A tool for unpacking and repacking g0s, fpk, fpkd and pftxs files\n" +
                               "Usage:\n" +
                               "  GzsTool file_path|folder_path\n" +
                               "Examples:\n" +
                               "  GzsTool file_path.g0s      - Unpacks the g0s file\n" +
                               "  GzsTool file_path.fpk      - Unpacks the fpk file\n" +
                               "  GzsTool file_path.fpkd     - Unpacks the fpkd file\n" +
+                              "  GzsTool file_path.pftxs    - Unpacks the pftxs file\n" +
                               "  GzsTool folder_path        - Unpacks all fpk and fpkd files in the folder\n" +
                               "  GzsTool file_path.g0s.xml  - Repacks the g0s file\n" +
                               "  GzsTool file_path.fpk.xml  - Repacks the fpk file\n" +
-                              "  GzsTool file_path.fpkd.xml - Repacks the fpkd file");
+                              "  GzsTool file_path.fpkd.xml - Repacks the fpkd file\n" +
+                              "  GzsTool file_path.pftxs.xml- Repacks the pftxs file");
         }
 
         private static void ReadGzsArchive(string path)
@@ -152,6 +159,30 @@ namespace GzsTool
             }
         }
 
+        private static void ReadPftxsArchive(string path)
+        {
+            PftxsUtility.UnpackPftxFile(path);
+            // TODO: Handle unpacking of Pftxs files the same way as g0s and fpk files.
+            //string fileDirectory = Path.GetDirectoryName(path);
+            //string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            //string outputDirectory = string.Format("{0}\\{1}_pftxs", fileDirectory, fileNameWithoutExtension);
+            //string xmlOutputPath = Path.Combine(fileDirectory,
+            //    string.Format("{0}.xml", Path.GetFileName(path)));
+
+            //using (FileStream input = new FileStream(path, FileMode.Open))
+            //using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
+            //{
+            //    PftxsFile pftxsFile = PftxsFile.ReadPftxsFile(input);
+            //    pftxsFile.Name = Path.GetFileName(path);
+            //foreach (var exportedFile in pftxsFile.ExportFiles(input))
+            //{
+            //    Console.WriteLine(exportedFile.FileName);
+            //    WriteExportedFile(exportedFile, outputDirectory);
+            //}
+            //ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
+            //}
+        }
+
         private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, string outputDirectory)
         {
             string outputPath = Path.Combine(outputDirectory, fileDataStreamContainer.FileName);
@@ -165,6 +196,14 @@ namespace GzsTool
         private static void WriteArchive(string path)
         {
             var directory = Path.GetDirectoryName(path);
+
+            // HACK: Until PftxsLogFile is an ArchiveFile
+            if (path.EndsWith(".pftxs.xml", StringComparison.InvariantCultureIgnoreCase))
+            {
+                PftxsUtility.PackPftxFile(path);
+                return;
+            }
+
             using (FileStream xmlInput = new FileStream(path, FileMode.Open))
             {
                 object file = ArchiveSerializer.Deserialize(xmlInput);
