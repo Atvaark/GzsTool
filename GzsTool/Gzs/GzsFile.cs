@@ -45,12 +45,12 @@ namespace GzsTool.Gzs
             }
         }
 
-        public override IEnumerable<FileDataContainer> ExportFiles(Stream input)
+        public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
             return Entries.Select(gzsEntry => gzsEntry.Export(input));
         }
 
-        public override void Write(Stream output, string inputDirectory)
+        public override void Write(Stream output, AbstractDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             foreach (var gzsEntry in Entries)

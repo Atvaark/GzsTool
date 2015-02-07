@@ -48,11 +48,10 @@ namespace GzsTool.Gzs
             FilePath = filePath;
         }
 
-        private byte[] ReadData(Stream input)
+        private Stream ReadData(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            uint dataOffset = 16*Offset;
-            input.Seek(dataOffset, SeekOrigin.Begin);
+            input.Position = 16*Offset;
             byte[] data = reader.ReadBytes((int) Size);
             data = Encryption.DeEncryptQar(data, Offset);
             const uint keyConstant = 0xA0F8EFE6;
@@ -65,22 +64,17 @@ namespace GzsTool.Gzs
                 Array.Copy(data, 8, data2, 0, data.Length - 8);
                 data = Encryption.DeEncrypt(data2, key);
             }
-            return data;
+
+            return new MemoryStream(data);
         }
 
-        private string GetRelativeFilePath()
+        private string GetGzsEntryFileName()
         {
             string filePath = FilePath;
             if (filePath.StartsWith("/"))
                 filePath = filePath.Substring(1, filePath.Length - 1);
             filePath = filePath.Replace("/", "\\");
             return filePath;
-        }
-
-        private string GetAbsoluteFilePath(string directory)
-        {
-            string filePath = GetRelativeFilePath();
-            return Path.Combine(directory, filePath);
         }
 
         private bool TryGetFilePath(out string filePath)
@@ -90,20 +84,12 @@ namespace GzsTool.Gzs
             return fileNameFound;
         }
 
-        public void WriteData(Stream output, string inputDirectory)
+        public void WriteData(Stream output, AbstractDirectory inputDirectory)
         {
             Offset = (uint) output.Position/16;
-
-            string inputFilePath = GetAbsoluteFilePath(inputDirectory);
-            byte[] data;
-            using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
-            {
-                data = new byte[input.Length];
-                input.Read(data, 0, data.Length);
-            }
+            byte[] data = inputDirectory.ReadFile(GetGzsEntryFileName());
             data = Encryption.DeEncryptQar(data, Offset);
             // TODO: Encrypt the data if a key is set for the entry.
-
             Size = (uint) data.Length;
             output.Write(data, 0, data.Length);
         }
@@ -122,14 +108,14 @@ namespace GzsTool.Gzs
                 Hash = Hashing.HashFileNameWithExtension(FilePath); //
         }
 
-        public FileDataContainer Export(Stream input)
+        public FileDataStreamContainer Export(Stream input)
         {
-            FileDataContainer container = new FileDataContainer
+            FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
-                Data = ReadData(input),
-                FileName = GetRelativeFilePath()
+                DataStream = ReadData(input),
+                FileName = GetGzsEntryFileName()
             };
-            return container;
+            return fileDataStreamContainer;
         }
     }
 }

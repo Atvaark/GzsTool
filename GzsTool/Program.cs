@@ -152,13 +152,13 @@ namespace GzsTool
             }
         }
 
-        private static void WriteExportedFile(FileDataContainer fileDataContainer, string outputDirectory)
+        private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, string outputDirectory)
         {
-            string outputPath = Path.Combine(outputDirectory, fileDataContainer.FileName);
+            string outputPath = Path.Combine(outputDirectory, fileDataStreamContainer.FileName);
             Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
-                output.Write(fileDataContainer.Data, 0, fileDataContainer.Data.Length);
+                fileDataStreamContainer.DataStream.CopyTo(output);
             }
         }
 
@@ -181,21 +181,26 @@ namespace GzsTool
             }
         }
 
-        private static void WriteGzsArchive(GzsFile gzsFile, string directory)
+        private static void WriteGzsArchive(GzsFile gzsFile, string workingDirectory)
         {
-            string outputPath = Path.Combine(directory, gzsFile.Name + ".test");
-            string inputDirectory = Path.Combine(directory, Path.GetFileNameWithoutExtension(gzsFile.Name));
+            string outputPath = Path.Combine(workingDirectory, gzsFile.Name + ".test");
+            string fileSystemInputDirectory = Path.Combine(workingDirectory,
+                Path.GetFileNameWithoutExtension(gzsFile.Name));
+            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
+
+
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
                 gzsFile.Write(output, inputDirectory);
             }
         }
 
-        private static void WriteFpkArchive(FpkFile fpkFile, string directory)
+        private static void WriteFpkArchive(FpkFile fpkFile, string workingDirectory)
         {
-            string outputPath = Path.Combine(directory, fpkFile.Name + ".test");
-            string inputDirectory = string.Format("{0}\\{1}_{2}", directory,
+            string outputPath = Path.Combine(workingDirectory, fpkFile.Name + ".test");
+            string fileSystemInputDirectory = string.Format("{0}\\{1}_{2}", workingDirectory,
                 Path.GetFileNameWithoutExtension(fpkFile.Name), Path.GetExtension(fpkFile.Name).Replace(".", ""));
+            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
                 fpkFile.Write(output, inputDirectory);

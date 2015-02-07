@@ -8,7 +8,7 @@ namespace GzsTool.Common
     public abstract class ArchiveFile
     {
         public abstract void Read(Stream input);
-        public abstract IEnumerable<FileDataContainer> ExportFiles(Stream input);
-        public abstract void Write(Stream output, string directory);
+        public abstract IEnumerable<FileDataStreamContainer> ExportFiles(Stream input);
+        public abstract void Write(Stream output, AbstractDirectory inputDirectory);
     }
 }

@@ -66,14 +66,11 @@ namespace GzsTool.Fpk
             FilePathFpkString = fileName;
         }
 
-        private byte[] ReadData(Stream input)
+        private Stream ReadData(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            long startPosition = input.Position;
-            input.Position = DataOffset;
-            byte[] data = reader.ReadBytes(DataSize);
-            input.Position = startPosition;
-            return data;
+            MemoryStream dataStream = new MemoryStream(reader.ReadBytes(DataSize));
+            return dataStream;
         }
 
         private string GetFpkEntryFileName()
@@ -107,25 +104,22 @@ namespace GzsTool.Fpk
             writer.Write(Md5Hash);
         }
 
-        public void WriteData(Stream output, string inputDirectory)
+        public void WriteData(Stream output, AbstractDirectory inputDirectory)
         {
             DataOffset = (uint) output.Position;
-            string path = Path.Combine(inputDirectory, GetFpkEntryFileName());
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            {
-                input.CopyTo(output);
-                DataSize = (int) input.Position;
-            }
+            byte[] data = inputDirectory.ReadFile(GetFpkEntryFileName());
+            DataSize = data.Length;
+            output.Write(data, 0, data.Length);
         }
 
-        public FileDataContainer Export(Stream input)
+        public FileDataStreamContainer Export(Stream input)
         {
-            FileDataContainer container = new FileDataContainer
+            FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
-                Data = ReadData(input),
+                DataStream = ReadData(input),
                 FileName = GetFpkEntryFileName()
             };
-            return container;
+            return fileDataStreamContainer;
         }
     }
 }

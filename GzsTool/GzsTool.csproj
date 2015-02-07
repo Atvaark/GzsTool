@@ -46,8 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Common\AbstractDirectory.cs" />
     <Compile Include="Common\ArchiveFile.cs" />
-    <Compile Include="Common\FileDataContainer.cs" />
+    <Compile Include="Common\FileDataStreamContainer.cs" />
+    <Compile Include="Common\FileSystemDirectory.cs" />
+    <Compile Include="Common\VirtualFileSystemDirectory.cs" />
     <Compile Include="Fpk\FpkType.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Utility\Encryption.cs" />

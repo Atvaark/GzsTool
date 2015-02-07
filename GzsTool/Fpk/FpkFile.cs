@@ -61,12 +61,12 @@ namespace GzsTool.Fpk
             }
         }
 
-        public override IEnumerable<FileDataContainer> ExportFiles(Stream input)
+        public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
             return Entries.Select(fpkEntry => fpkEntry.Export(input));
         }
 
-        public override void Write(Stream output, string directory)
+        public override void Write(Stream output, AbstractDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             const int headerSize = 48;
@@ -88,7 +88,7 @@ namespace GzsTool.Fpk
 
             foreach (var fpkEntry in Entries)
             {
-                fpkEntry.WriteData(output, directory);
+                fpkEntry.WriteData(output, inputDirectory);
                 output.AlignWrite(16, 0x00);
             }
 
