@@ -61,6 +61,7 @@ namespace GzsTool.Pftxs
             input.Position = DataOffset;
             foreach (var file in Entries)
             {
+                // TODO: Don't keep the data in memory.
                 file.Data = reader.ReadBytes(file.FileSize);
                 file.PsubFile = PsubFile.ReadPsubFile(input);
             }
