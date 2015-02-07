@@ -8,74 +8,6 @@ namespace GzsTool.Pftxs
 {
     internal static class PftxsUtility
     {
-        public static void UnpackPftxFile(string path)
-        {
-            string archiveOutputDirectoryName = string.Format("{0}_pftxs", Path.GetFileNameWithoutExtension(path));
-            string archiveNameWithExtension = Path.GetFileName(path);
-            string archiveDirectory = Path.GetDirectoryName(path);
-
-            PftxsFile pftxsFile;
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            {
-                pftxsFile = PftxsFile.ReadPftxsFile(input);
-            }
-            PftxsLogFile logFile = new PftxsLogFile {ArchiveName = archiveNameWithExtension};
-            string fileDirectory = "";
-            foreach (var file in pftxsFile.FilesEntries)
-            {
-                var fileName = "";
-                if (file.FileName.StartsWith("@"))
-                {
-                    fileName = file.FileName.Remove(0, 1);
-                }
-                else if (file.FileName.StartsWith("/"))
-                {
-                    fileDirectory = Path.GetDirectoryName(file.FileName.Remove(0, 1));
-                    fileName = Path.GetFileName(file.FileName);
-                }
-                string relativeOutputDirectory = Path.Combine(archiveOutputDirectoryName, fileDirectory);
-                string relativePath = Path.Combine(relativeOutputDirectory, fileName);
-                string relativeFilePath = String.Format("{0}.ftex", relativePath);
-
-                string fullOutputDirectory = Path.Combine(archiveDirectory, relativeOutputDirectory);
-                Directory.CreateDirectory(fullOutputDirectory);
-                string fullFilePath = Path.Combine(archiveDirectory, relativeFilePath);
-                using (FileStream fileOutputStream = new FileStream(fullFilePath, FileMode.Create))
-                {
-                    fileOutputStream.Write(file.Data, 0, file.Data.Length);
-                    Console.WriteLine(relativeFilePath);
-                }
-                int subFileNumber = 1;
-                foreach (var psubFileEntry in file.PsubFile.Entries)
-                {
-                    string relativeSubFilePath = String.Format("{0}.{1}.ftexs", relativePath, subFileNumber);
-                    string fullSubFilePath = Path.Combine(archiveDirectory, relativeSubFilePath);
-
-                    using (FileStream subFileOutputStream = new FileStream(fullSubFilePath, FileMode.Create))
-                    {
-                        subFileOutputStream.Write(psubFileEntry.Data, 0, psubFileEntry.Data.Length);
-                        Console.WriteLine(relativeSubFilePath);
-                    }
-                    subFileNumber += 1;
-                }
-                PftxsLogEntry logEntry = new PftxsLogEntry
-                {
-                    FileDirectory = fileDirectory,
-                    FileName = fileName,
-                    SubFileCount = file.PsubFile.Entries.Count()
-                };
-                logFile.Entries.Add(logEntry);
-            }
-
-            using (FileStream xmlStream =
-                new FileStream(Path.Combine(archiveDirectory, string.Format("{0}.xml", archiveNameWithExtension)),
-                    FileMode.Create))
-            {
-                var xmlSerializer = new XmlSerializer(typeof (PftxsLogFile));
-                xmlSerializer.Serialize(xmlStream, logFile);
-            }
-        }
-
         public static void PackPftxFile(string path)
         {
             string archiveDirectory = Path.GetDirectoryName(path);
@@ -129,12 +61,12 @@ namespace GzsTool.Pftxs
                         Data = psubFileData,
                         Size = psubFileData.Length
                     };
-                    psubFile.AddPsubFileEntry(psubFileEntry);
+                    psubFile.Entries.Add(psubFileEntry);
                 }
                 entry.PsubFile = psubFile;
-                pftxsFile.AddPftxsFileEntry(entry);
+                pftxsFile.Entries.Add(entry);
             }
-            pftxsFile.FileCount = pftxsFile.FilesEntries.Count();
+            pftxsFile.FileCount = pftxsFile.Entries.Count();
             return pftxsFile;
         }
 

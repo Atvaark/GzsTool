@@ -3,23 +3,22 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace GzsTool.Pftxs.Psub
 {
+    [XmlType("PsubFile")]
     public class PsubFile
     {
         private const int MagicNumber = 0x42555350; // PSUB
-        private readonly List<PsubFileEntry> _entries;
 
         public PsubFile()
         {
-            _entries = new List<PsubFileEntry>();
+            Entries = new List<PsubFileEntry>();
         }
 
-        public IEnumerable<PsubFileEntry> Entries
-        {
-            get { return _entries; }
-        }
+        [XmlArray("Entries")]
+        public List<PsubFileEntry> Entries { get; set; }
 
         public static PsubFile ReadPsubFile(Stream input)
         {
@@ -36,7 +35,7 @@ namespace GzsTool.Pftxs.Psub
             for (int i = 0; i < entryCount; i++)
             {
                 PsubFileEntry entry = PsubFileEntry.ReadPsubFileEntry(input);
-                AddPsubFileEntry(entry);
+                Entries.Add(entry);
             }
             input.AlignRead(16);
             foreach (var entry in Entries)
@@ -44,11 +43,6 @@ namespace GzsTool.Pftxs.Psub
                 entry.Data = reader.ReadBytes(entry.Size);
                 input.AlignRead(16);
             }
-        }
-
-        public void AddPsubFileEntry(PsubFileEntry entry)
-        {
-            _entries.Add(entry);
         }
 
         public void Write(Stream output)

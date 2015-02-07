@@ -1,14 +1,25 @@
 ﻿using System.IO;
 using System.Text;
+using System.Xml.Serialization;
 
 namespace GzsTool.Pftxs.Psub
 {
+    [XmlType("Entry", Namespace = "Psub")]
     public class PsubFileEntry
     {
         public const int PsubFileEntrySize = 8;
+
+        [XmlIgnore]
         public int Offset { get; set; }
+
+        [XmlIgnore]
         public int Size { get; set; }
+
+        [XmlIgnore]
         public byte[] Data { get; set; }
+
+        [XmlAttribute("FileName")]
+        public string FileName { get; set; }
 
         public static PsubFileEntry ReadPsubFileEntry(Stream input)
         {

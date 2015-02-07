@@ -3,31 +3,39 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml.Serialization;
+using GzsTool.Common;
 using GzsTool.Pftxs.Psub;
 
 namespace GzsTool.Pftxs
 {
-    public class PftxsFile
+    [XmlType("PftxsFile")]
+    public class PftxsFile : ArchiveFile
     {
         private const int HeaderSize = 20;
         private const int PftxMagicNumber = 0x58544650; //PFTX
         private const int MagicNumber2 = 0x3F800000; // float 1
         private const int EndOfPackFileMagicNumber = 0x46504F45; //EOPF
-        private readonly List<PftxsFileEntry> _filesEntries;
 
         public PftxsFile()
         {
-            _filesEntries = new List<PftxsFileEntry>();
+            Entries = new List<PftxsFileEntry>();
         }
 
+        [XmlAttribute("Name")]
+        public string Name { get; set; }
+
+        [XmlArray("Entries")]
+        public List<PftxsFileEntry> Entries { get; set; }
+
+        [XmlIgnore]
         public int Size { get; set; }
-        public int FileCount { get; set; }
-        public int DataOffset { get; set; }
 
-        public IEnumerable<PftxsFileEntry> FilesEntries
-        {
-            get { return _filesEntries; }
-        }
+        [XmlIgnore]
+        public int FileCount { get; set; }
+
+        [XmlIgnore]
+        public int DataOffset { get; set; }
 
         public static PftxsFile ReadPftxsFile(Stream input)
         {
@@ -36,7 +44,7 @@ namespace GzsTool.Pftxs
             return pftxsFile;
         }
 
-        public void Read(Stream input)
+        public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             int magicNumber1 = reader.ReadInt32();
@@ -48,10 +56,10 @@ namespace GzsTool.Pftxs
             {
                 PftxsFileEntry pftxsFileEntry = new PftxsFileEntry();
                 pftxsFileEntry.Read(input);
-                AddPftxsFileEntry(pftxsFileEntry);
+                Entries.Add(pftxsFileEntry);
             }
             input.Position = DataOffset;
-            foreach (var file in FilesEntries)
+            foreach (var file in Entries)
             {
                 file.Data = reader.ReadBytes(file.FileSize);
                 file.PsubFile = PsubFile.ReadPsubFile(input);
@@ -59,9 +67,53 @@ namespace GzsTool.Pftxs
             int magicNumber3 = reader.ReadInt32();
         }
 
-        public void AddPftxsFileEntry(PftxsFileEntry pftxsFileEntry)
+        public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
-            _filesEntries.Add(pftxsFileEntry);
+            string fileDirectory = "";
+            foreach (var file in Entries)
+            {
+                var fileNameWithoutExtension = "";
+                if (file.FileName.StartsWith("@"))
+                {
+                    fileNameWithoutExtension = file.FileName.Remove(0, 1);
+                }
+                else if (file.FileName.StartsWith("/"))
+                {
+                    fileDirectory = Path.GetDirectoryName(file.FileName.Remove(0, 1));
+                    fileNameWithoutExtension = Path.GetFileName(file.FileName);
+                }
+
+                string fileName = String.Format("{0}.ftex", fileNameWithoutExtension);
+                string relativeFilePath = Path.Combine(fileDirectory, fileName);
+                file.FileName = fileName;
+                file.FileDirectory = fileDirectory;
+                FileDataStreamContainer ftexContainer = new FileDataStreamContainer
+                {
+                    DataStream = new MemoryStream(file.Data),
+                    FileName = relativeFilePath
+                };
+                yield return ftexContainer;
+
+                int subFileNumber = 1;
+                foreach (var psubFileEntry in file.PsubFile.Entries)
+                {
+                    string subpFileEntryName = String.Format("{0}.{1}.ftexs", fileNameWithoutExtension, subFileNumber);
+                    string relativeSubFilePath = Path.Combine(fileDirectory, subpFileEntryName);
+                    psubFileEntry.FileName = subpFileEntryName;
+                    FileDataStreamContainer ftexsContainer = new FileDataStreamContainer
+                    {
+                        DataStream = new MemoryStream(psubFileEntry.Data),
+                        FileName = relativeSubFilePath
+                    };
+                    yield return ftexsContainer;
+                    subFileNumber += 1;
+                }
+            }
+        }
+
+        public override void Write(Stream output, AbstractDirectory inputDirectory)
+        {
+            throw new NotImplementedException();
         }
 
         public void Write(Stream output)
@@ -69,18 +121,18 @@ namespace GzsTool.Pftxs
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             long headerPosition = output.Position;
             output.Position += HeaderSize;
-            long fileIndicesHeaderSize = PftxsFileEntry.HeaderSize*FilesEntries.Count();
+            long fileIndicesHeaderSize = PftxsFileEntry.HeaderSize*Entries.Count();
             output.Position += fileIndicesHeaderSize;
             output.AlignWrite(16, 0xCC);
 
-            foreach (var fileEntry in FilesEntries)
+            foreach (var fileEntry in Entries)
             {
                 fileEntry.FileNameOffset = Convert.ToInt32(output.Position);
                 fileEntry.WriteFileName(output);
             }
             output.AlignWrite(16, 0xCC);
             DataOffset = Convert.ToInt32(output.Position);
-            foreach (var fileEntry in FilesEntries)
+            foreach (var fileEntry in Entries)
             {
                 fileEntry.WriteData(output);
                 fileEntry.WritePsubFile(output);
@@ -95,7 +147,7 @@ namespace GzsTool.Pftxs
             writer.Write(Size);
             writer.Write(FileCount);
             writer.Write(DataOffset);
-            foreach (var fileEntry in FilesEntries)
+            foreach (var fileEntry in Entries)
             {
                 fileEntry.Write(output);
             }

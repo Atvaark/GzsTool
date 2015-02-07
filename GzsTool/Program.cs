@@ -15,7 +15,7 @@ namespace GzsTool
     internal static class Program
     {
         private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
-            new[] {typeof (FpkFile), typeof (GzsFile)});
+            new[] {typeof (FpkFile), typeof (GzsFile), typeof (PftxsFile)});
 
         private static void Main(string[] args)
         {
@@ -161,26 +161,24 @@ namespace GzsTool
 
         private static void ReadPftxsArchive(string path)
         {
-            PftxsUtility.UnpackPftxFile(path);
-            // TODO: Handle unpacking of Pftxs files the same way as g0s and fpk files.
-            //string fileDirectory = Path.GetDirectoryName(path);
-            //string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            //string outputDirectory = string.Format("{0}\\{1}_pftxs", fileDirectory, fileNameWithoutExtension);
-            //string xmlOutputPath = Path.Combine(fileDirectory,
-            //    string.Format("{0}.xml", Path.GetFileName(path)));
+            string fileDirectory = Path.GetDirectoryName(path);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            string outputDirectory = string.Format("{0}\\{1}_pftxs", fileDirectory, fileNameWithoutExtension);
+            string xmlOutputPath = Path.Combine(fileDirectory,
+                string.Format("{0}.xml", Path.GetFileName(path)));
 
-            //using (FileStream input = new FileStream(path, FileMode.Open))
-            //using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
-            //{
-            //    PftxsFile pftxsFile = PftxsFile.ReadPftxsFile(input);
-            //    pftxsFile.Name = Path.GetFileName(path);
-            //foreach (var exportedFile in pftxsFile.ExportFiles(input))
-            //{
-            //    Console.WriteLine(exportedFile.FileName);
-            //    WriteExportedFile(exportedFile, outputDirectory);
-            //}
-            //ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
-            //}
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
+            {
+                PftxsFile pftxsFile = PftxsFile.ReadPftxsFile(input);
+                pftxsFile.Name = Path.GetFileName(path);
+                foreach (var exportedFile in pftxsFile.ExportFiles(input))
+                {
+                    Console.WriteLine(exportedFile.FileName);
+                    WriteExportedFile(exportedFile, outputDirectory);
+                }
+                ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
+            }
         }
 
         private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, string outputDirectory)
