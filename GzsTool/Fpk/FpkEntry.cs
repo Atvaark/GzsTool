@@ -69,6 +69,7 @@ namespace GzsTool.Fpk
         private Stream ReadData(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
+            input.Position = DataOffset;
             MemoryStream dataStream = new MemoryStream(reader.ReadBytes(DataSize));
             return dataStream;
         }

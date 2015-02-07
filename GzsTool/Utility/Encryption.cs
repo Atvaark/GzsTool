@@ -103,6 +103,10 @@ namespace GzsTool.Utility
                 offset += 4;
             }
 
+            if (len > 0)
+            {
+                Buffer.BlockCopy(data, offset, result, offset, len);
+            }
             return result;
         }
     }
