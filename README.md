@@ -33,13 +33,13 @@ Unpacking all fpk and fpkd files in a folder. This will unpack all files to thei
 GzsTool folder_path
 ```
 
-Repacking a g0s file. This will create the "file_name.g0s.test" archive.
+Repacking a g0s file. This will create the "file_name.g0s" archive.
 ```
 GzsTool file_path.g0s.xml
 ```
 
 
-Repacking an fpk/fpkd file. This will create the "file_name.fpk.test/file_name.fpkd.test" archive.
+Repacking an fpk/fpkd file. This will create the "file_name.fpk/file_name.fpkd" archive.
 ```
 GzsTool file_path.fpk.xml
 GzsTool file_path.fpkd.xml

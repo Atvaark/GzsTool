@@ -183,7 +183,7 @@ namespace GzsTool
 
         private static void WriteGzsArchive(GzsFile gzsFile, string workingDirectory)
         {
-            string outputPath = Path.Combine(workingDirectory, gzsFile.Name + ".test");
+            string outputPath = Path.Combine(workingDirectory, gzsFile.Name);
             string fileSystemInputDirectory = Path.Combine(workingDirectory,
                 Path.GetFileNameWithoutExtension(gzsFile.Name));
             AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
@@ -197,7 +197,7 @@ namespace GzsTool
 
         private static void WriteFpkArchive(FpkFile fpkFile, string workingDirectory)
         {
-            string outputPath = Path.Combine(workingDirectory, fpkFile.Name + ".test");
+            string outputPath = Path.Combine(workingDirectory, fpkFile.Name);
             string fileSystemInputDirectory = string.Format("{0}\\{1}_{2}", workingDirectory,
                 Path.GetFileNameWithoutExtension(fpkFile.Name), Path.GetExtension(fpkFile.Name).Replace(".", ""));
             AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
