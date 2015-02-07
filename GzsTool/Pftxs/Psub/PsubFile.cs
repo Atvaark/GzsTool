@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 
 namespace GzsTool.Pftxs.Psub
 {
@@ -45,7 +46,7 @@ namespace GzsTool.Pftxs.Psub
             }
         }
 
-        public void Write(Stream output)
+        public void Write(Stream output, AbstractDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(MagicNumber);
@@ -56,8 +57,7 @@ namespace GzsTool.Pftxs.Psub
             foreach (var entry in Entries)
             {
                 entry.Offset = Convert.ToInt32(output.Position);
-                entry.Size = entry.Data.Length;
-                entry.WriteData(output);
+                entry.WriteData(output, inputDirectory);
                 output.AlignWrite(16, 0xCC);
             }
             long endPosition = output.Position;

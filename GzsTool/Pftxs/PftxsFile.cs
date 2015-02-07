@@ -85,8 +85,7 @@ namespace GzsTool.Pftxs
 
                 string fileName = String.Format("{0}.ftex", fileNameWithoutExtension);
                 string relativeFilePath = Path.Combine(fileDirectory, fileName);
-                file.FileName = fileName;
-                file.FileDirectory = fileDirectory;
+                file.FilePath = relativeFilePath;
                 FileDataStreamContainer ftexContainer = new FileDataStreamContainer
                 {
                     DataStream = new MemoryStream(file.Data),
@@ -99,7 +98,7 @@ namespace GzsTool.Pftxs
                 {
                     string subpFileEntryName = String.Format("{0}.{1}.ftexs", fileNameWithoutExtension, subFileNumber);
                     string relativeSubFilePath = Path.Combine(fileDirectory, subpFileEntryName);
-                    psubFileEntry.FileName = subpFileEntryName;
+                    psubFileEntry.FilePath = relativeSubFilePath;
                     FileDataStreamContainer ftexsContainer = new FileDataStreamContainer
                     {
                         DataStream = new MemoryStream(psubFileEntry.Data),
@@ -113,11 +112,7 @@ namespace GzsTool.Pftxs
 
         public override void Write(Stream output, AbstractDirectory inputDirectory)
         {
-            throw new NotImplementedException();
-        }
-
-        public void Write(Stream output)
-        {
+            UpdateFileNames();
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             long headerPosition = output.Position;
             output.Position += HeaderSize;
@@ -131,16 +126,19 @@ namespace GzsTool.Pftxs
                 fileEntry.WriteFileName(output);
             }
             output.AlignWrite(16, 0xCC);
+
             DataOffset = Convert.ToInt32(output.Position);
             foreach (var fileEntry in Entries)
             {
-                fileEntry.WriteData(output);
-                fileEntry.WritePsubFile(output);
+                fileEntry.WriteData(output, inputDirectory);
+                fileEntry.WritePsubFile(output, inputDirectory);
             }
             writer.Write(EndOfPackFileMagicNumber);
             output.AlignWrite(2048, 0xCC);
             long endPosition = output.Position;
+
             Size = Convert.ToInt32(endPosition);
+            FileCount = Entries.Count();
             output.Position = headerPosition;
             writer.Write(PftxMagicNumber);
             writer.Write(MagicNumber2);
@@ -152,6 +150,26 @@ namespace GzsTool.Pftxs
                 fileEntry.Write(output);
             }
             output.Position = endPosition;
+        }
+
+        private void UpdateFileNames()
+        {
+            string lastDirectory = "";
+            foreach (var entry in Entries)
+            {
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(entry.FilePath);
+                string fileDirectory = Path.GetDirectoryName(entry.FilePath);
+                if (fileDirectory == lastDirectory)
+                {
+                    entry.FileName = string.Format("@{0}", fileNameWithoutExtension);
+                }
+                else
+                {
+                    entry.FileName = string.Format("\\{0}\\{1}", fileDirectory, fileNameWithoutExtension)
+                        .Replace('\\', '/');
+                    lastDirectory = fileDirectory;
+                }
+            }
         }
     }
 }

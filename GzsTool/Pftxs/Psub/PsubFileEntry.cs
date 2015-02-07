@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using System.Xml.Serialization;
+using GzsTool.Common;
 
 namespace GzsTool.Pftxs.Psub
 {
@@ -18,8 +19,8 @@ namespace GzsTool.Pftxs.Psub
         [XmlIgnore]
         public byte[] Data { get; set; }
 
-        [XmlAttribute("FileName")]
-        public string FileName { get; set; }
+        [XmlAttribute("FilePath")]
+        public string FilePath { get; set; }
 
         public static PsubFileEntry ReadPsubFileEntry(Stream input)
         {
@@ -42,10 +43,11 @@ namespace GzsTool.Pftxs.Psub
             writer.Write(Size);
         }
 
-        public void WriteData(Stream output)
+        public void WriteData(Stream output, AbstractDirectory inputDirectory)
         {
-            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
-            writer.Write(Data);
+            byte[] data = inputDirectory.ReadFile(FilePath);
+            Size = data.Length;
+            output.Write(data, 0, data.Length);
         }
     }
 }

@@ -194,26 +194,23 @@ namespace GzsTool
         private static void WriteArchive(string path)
         {
             var directory = Path.GetDirectoryName(path);
-
-            // HACK: Until PftxsLogFile is an ArchiveFile
-            if (path.EndsWith(".pftxs.xml", StringComparison.InvariantCultureIgnoreCase))
-            {
-                PftxsUtility.PackPftxFile(path);
-                return;
-            }
-
             using (FileStream xmlInput = new FileStream(path, FileMode.Open))
             {
                 object file = ArchiveSerializer.Deserialize(xmlInput);
+                GzsFile gzsFile = file as GzsFile;
+                if (gzsFile != null)
+                {
+                    WriteGzsArchive(gzsFile, directory);
+                }
                 FpkFile fpkFile = file as FpkFile;
                 if (fpkFile != null)
                 {
                     WriteFpkArchive(fpkFile, directory);
                 }
-                GzsFile gzsFile = file as GzsFile;
-                if (gzsFile != null)
+                PftxsFile pftxsFile = file as PftxsFile;
+                if (pftxsFile != null)
                 {
-                    WriteGzsArchive(gzsFile, directory);
+                    WritePftxsArchive(pftxsFile, directory);
                 }
             }
         }
@@ -241,6 +238,18 @@ namespace GzsTool
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
                 fpkFile.Write(output, inputDirectory);
+            }
+        }
+
+        private static void WritePftxsArchive(PftxsFile pftxsFile, string workingDirectory)
+        {
+            string outputPath = Path.Combine(workingDirectory, pftxsFile.Name);
+            string fileSystemInputDirectory = string.Format("{0}\\{1}_pftxs", workingDirectory,
+                Path.GetFileNameWithoutExtension(pftxsFile.Name));
+            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
+            using (FileStream output = new FileStream(outputPath, FileMode.Create))
+            {
+                pftxsFile.Write(output, inputDirectory);
             }
         }
 
