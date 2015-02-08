@@ -90,7 +90,7 @@ namespace GzsTool.Pftxs
                 file.FilePath = relativeFilePath;
                 FileDataStreamContainer ftexContainer = new FileDataStreamContainer
                 {
-                    DataStream = new MemoryStream(file.ReadData(input)),
+                    DataStream = file.ReadData(input),
                     FileName = relativeFilePath
                 };
                 yield return ftexContainer;
@@ -103,7 +103,7 @@ namespace GzsTool.Pftxs
                     psubFileEntry.FilePath = relativeSubFilePath;
                     FileDataStreamContainer ftexsContainer = new FileDataStreamContainer
                     {
-                        DataStream = new MemoryStream(psubFileEntry.ReadData(input)),
+                        DataStream = psubFileEntry.ReadData(input),
                         FileName = relativeSubFilePath
                     };
                     yield return ftexsContainer;

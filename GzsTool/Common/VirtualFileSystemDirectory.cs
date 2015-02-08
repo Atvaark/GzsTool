@@ -25,16 +25,16 @@ namespace GzsTool.Common
             get { return _name; }
         }
 
-        public byte[] ReadFile(string relativeFilePath)
+        public byte[] ReadFile(string filePath)
         {
-            int index = relativeFilePath.IndexOf(DirectorySeparator, StringComparison.Ordinal);
+            int index = filePath.IndexOf(DirectorySeparator, StringComparison.Ordinal);
             if (index == -1)
             {
-                return _files.Single(f => f.Name == relativeFilePath).Content;
+                return _files.Single(f => f.Name == filePath).Content;
             }
-            string subDirectory = relativeFilePath.Substring(0, index);
-            string subDirectoryFilePath = relativeFilePath.Substring(index + DirectorySeparator.Length,
-                relativeFilePath.Length - index - DirectorySeparator.Length);
+            string subDirectory = filePath.Substring(0, index);
+            string subDirectoryFilePath = filePath.Substring(index + DirectorySeparator.Length,
+                filePath.Length - index - DirectorySeparator.Length);
             return _directories.Single(d => d.Name == subDirectory).ReadFile(subDirectoryFilePath);
         }
 

@@ -6,7 +6,7 @@ namespace GzsTool.Common.Interfaces
     public interface IDirectory : IFileSystemEntry
     {
         IEnumerable<IFileSystemEntry> Entries { get; }
-        byte[] ReadFile(string relativeFilePath);
+        byte[] ReadFile(string filePath);
         void WriteFile(string filePath, Stream fileContentStream);
     }
 }

@@ -16,9 +16,9 @@ namespace GzsTool.Common
             _name = Path.GetFileName(baseDirectoryPath);
         }
 
-        public byte[] ReadFile(string relativeFilePath)
+        public byte[] ReadFile(string filePath)
         {
-            string inputFilePath = Path.Combine(_baseDirectoryPath, relativeFilePath);
+            string inputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
             {
                 byte[] data = new byte[input.Length];

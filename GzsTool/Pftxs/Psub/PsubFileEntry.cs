@@ -33,12 +33,12 @@ namespace GzsTool.Pftxs.Psub
             Size = reader.ReadInt32();
         }
 
-        public byte[] ReadData(Stream input)
+        public Stream ReadData(Stream input)
         {
             input.Position = Offset;
             byte[] result = new byte[Size];
             input.Read(result, 0, Size);
-            return result;
+            return new MemoryStream(result);
         }
 
         public void Write(Stream output)

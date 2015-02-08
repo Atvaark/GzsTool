@@ -41,12 +41,12 @@ namespace GzsTool.Pftxs
             input.Position = position;
         }
 
-        public byte[] ReadData(Stream input)
+        public Stream ReadData(Stream input)
         {
             input.Position = DataOffset;
             byte[] result = new byte[FileSize];
             input.Read(result, 0, FileSize);
-            return result;
+            return new MemoryStream(result);
         }
 
         public void Write(Stream output)
