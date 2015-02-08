@@ -46,11 +46,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common\AbstractDirectory.cs" />
+    <Compile Include="Common\FileSystemFile.cs" />
+    <Compile Include="Common\Interfaces\IDirectory.cs" />
     <Compile Include="Common\ArchiveFile.cs" />
     <Compile Include="Common\FileDataStreamContainer.cs" />
     <Compile Include="Common\FileSystemDirectory.cs" />
+    <Compile Include="Common\Interfaces\IFile.cs" />
+    <Compile Include="Common\Interfaces\IFileSystemEntry.cs" />
     <Compile Include="Common\VirtualFileSystemDirectory.cs" />
+    <Compile Include="Common\VirtualFileSystemFile.cs" />
     <Compile Include="Fpk\FpkType.cs" />
     <Compile Include="Pftxs\PftxsFile.cs" />
     <Compile Include="Pftxs\PftxsFileEntry.cs" />

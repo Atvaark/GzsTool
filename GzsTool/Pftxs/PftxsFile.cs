@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 using GzsTool.Pftxs.Psub;
 
 namespace GzsTool.Pftxs
@@ -111,7 +112,7 @@ namespace GzsTool.Pftxs
             }
         }
 
-        public override void Write(Stream output, AbstractDirectory inputDirectory)
+        public override void Write(Stream output, IDirectory inputDirectory)
         {
             UpdateFileNames();
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);

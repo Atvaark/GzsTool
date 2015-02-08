@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using System.Xml.Serialization;
-using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Pftxs.Psub
 {
@@ -48,7 +48,7 @@ namespace GzsTool.Pftxs.Psub
             writer.Write(Size);
         }
 
-        public void WriteData(Stream output, AbstractDirectory inputDirectory)
+        public void WriteData(Stream output, IDirectory inputDirectory)
         {
             byte[] data = inputDirectory.ReadFile(FilePath);
             Size = data.Length;

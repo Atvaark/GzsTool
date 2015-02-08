@@ -16,6 +16,15 @@ namespace GzsTool
             stream.Seek(count, SeekOrigin.Current);
         }
 
+        public static byte[] ToArray(this Stream input)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                input.CopyTo(ms);
+                return ms.ToArray();
+            }
+        }
+
         internal static void WriteZeros(this BinaryWriter writer, int count)
         {
             byte[] zeros = new byte[count];

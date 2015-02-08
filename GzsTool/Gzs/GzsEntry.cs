@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 using GzsTool.Utility;
 
 namespace GzsTool.Gzs
@@ -84,7 +85,7 @@ namespace GzsTool.Gzs
             return fileNameFound;
         }
 
-        public void WriteData(Stream output, AbstractDirectory inputDirectory)
+        public void WriteData(Stream output, IDirectory inputDirectory)
         {
             Offset = (uint) output.Position/16;
             byte[] data = inputDirectory.ReadFile(GetGzsEntryFileName());

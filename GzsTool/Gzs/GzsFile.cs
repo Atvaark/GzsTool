@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Gzs
 {
@@ -50,7 +51,7 @@ namespace GzsTool.Gzs
             return Entries.Select(gzsEntry => gzsEntry.Export(input));
         }
 
-        public override void Write(Stream output, AbstractDirectory inputDirectory)
+        public override void Write(Stream output, IDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             foreach (var gzsEntry in Entries)

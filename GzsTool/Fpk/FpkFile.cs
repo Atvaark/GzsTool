@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Fpk
 {
@@ -66,7 +67,7 @@ namespace GzsTool.Fpk
             return Entries.Select(fpkEntry => fpkEntry.Export(input));
         }
 
-        public override void Write(Stream output, AbstractDirectory inputDirectory)
+        public override void Write(Stream output, IDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             const int headerSize = 48;

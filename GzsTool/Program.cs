@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
 using GzsTool.Pftxs;
@@ -105,9 +106,10 @@ namespace GzsTool
         {
             string fileDirectory = Path.GetDirectoryName(path);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            string outputDirectory = Path.Combine(fileDirectory, fileNameWithoutExtension);
+            string outputDirectoryPath = Path.Combine(fileDirectory, fileNameWithoutExtension);
             string xmlOutputPath = Path.Combine(fileDirectory,
                 string.Format("{0}.xml", Path.GetFileName(path)));
+            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
 
             using (FileStream input = new FileStream(path, FileMode.Open))
             using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
@@ -142,9 +144,10 @@ namespace GzsTool
             string fileDirectory = Path.GetDirectoryName(path);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
             string extension = Path.GetExtension(path).Replace(".", "");
-            string outputDirectory = string.Format("{0}\\{1}_{2}", fileDirectory, fileNameWithoutExtension, extension);
+            string outputDirectoryPath = string.Format("{0}\\{1}_{2}", fileDirectory, fileNameWithoutExtension, extension);
             string xmlOutputPath = Path.Combine(fileDirectory,
                 string.Format("{0}.xml", Path.GetFileName(path)));
+            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
 
             using (FileStream input = new FileStream(path, FileMode.Open))
             using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
@@ -164,9 +167,10 @@ namespace GzsTool
         {
             string fileDirectory = Path.GetDirectoryName(path);
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            string outputDirectory = string.Format("{0}\\{1}_pftxs", fileDirectory, fileNameWithoutExtension);
+            string outputDirectoryPath = string.Format("{0}\\{1}_pftxs", fileDirectory, fileNameWithoutExtension);
             string xmlOutputPath = Path.Combine(fileDirectory,
                 string.Format("{0}.xml", Path.GetFileName(path)));
+            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
 
             using (FileStream input = new FileStream(path, FileMode.Open))
             using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
@@ -182,14 +186,9 @@ namespace GzsTool
             }
         }
 
-        private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, string outputDirectory)
+        private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, IDirectory outputDirectoryInterface)
         {
-            string outputPath = Path.Combine(outputDirectory, fileDataStreamContainer.FileName);
-            Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
-            using (FileStream output = new FileStream(outputPath, FileMode.Create))
-            {
-                fileDataStreamContainer.DataStream.CopyTo(output);
-            }
+            outputDirectoryInterface.WriteFile(fileDataStreamContainer.FileName, fileDataStreamContainer.DataStream);
         }
 
         private static void WriteArchive(string path)
@@ -221,7 +220,7 @@ namespace GzsTool
             string outputPath = Path.Combine(workingDirectory, gzsFile.Name);
             string fileSystemInputDirectory = Path.Combine(workingDirectory,
                 Path.GetFileNameWithoutExtension(gzsFile.Name));
-            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
+            IDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
 
 
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
@@ -235,7 +234,7 @@ namespace GzsTool
             string outputPath = Path.Combine(workingDirectory, fpkFile.Name);
             string fileSystemInputDirectory = string.Format("{0}\\{1}_{2}", workingDirectory,
                 Path.GetFileNameWithoutExtension(fpkFile.Name), Path.GetExtension(fpkFile.Name).Replace(".", ""));
-            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
+            IDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
                 fpkFile.Write(output, inputDirectory);
@@ -247,7 +246,7 @@ namespace GzsTool
             string outputPath = Path.Combine(workingDirectory, pftxsFile.Name);
             string fileSystemInputDirectory = string.Format("{0}\\{1}_pftxs", workingDirectory,
                 Path.GetFileNameWithoutExtension(pftxsFile.Name));
-            AbstractDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
+            IDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
                 pftxsFile.Write(output, inputDirectory);

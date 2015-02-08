@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
-using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Pftxs.Psub
 {
@@ -46,7 +46,7 @@ namespace GzsTool.Pftxs.Psub
             }
         }
 
-        public void Write(Stream output, AbstractDirectory inputDirectory)
+        public void Write(Stream output, IDirectory inputDirectory)
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(MagicNumber);

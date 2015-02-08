@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 using GzsTool.Utility;
 
 namespace GzsTool.Fpk
@@ -105,7 +106,7 @@ namespace GzsTool.Fpk
             writer.Write(Md5Hash);
         }
 
-        public void WriteData(Stream output, AbstractDirectory inputDirectory)
+        public void WriteData(Stream output, IDirectory inputDirectory)
         {
             DataOffset = (uint) output.Position;
             byte[] data = inputDirectory.ReadFile(GetFpkEntryFileName());
