@@ -16,9 +16,6 @@ namespace GzsTool.Pftxs.Psub
         [XmlIgnore]
         public int Size { get; set; }
 
-        [XmlIgnore]
-        public byte[] Data { get; set; }
-
         [XmlAttribute("FilePath")]
         public string FilePath { get; set; }
 
@@ -34,6 +31,14 @@ namespace GzsTool.Pftxs.Psub
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             Offset = reader.ReadInt32();
             Size = reader.ReadInt32();
+        }
+
+        public byte[] ReadData(Stream input)
+        {
+            input.Position = Offset;
+            byte[] result = new byte[Size];
+            input.Read(result, 0, Size);
+            return result;
         }
 
         public void Write(Stream output)

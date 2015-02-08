@@ -41,8 +41,7 @@ namespace GzsTool.Pftxs.Psub
             input.AlignRead(16);
             foreach (var entry in Entries)
             {
-                // TODO: Don't keep the data in memory.
-                entry.Data = reader.ReadBytes(entry.Size);
+                input.Skip(entry.Size);
                 input.AlignRead(16);
             }
         }

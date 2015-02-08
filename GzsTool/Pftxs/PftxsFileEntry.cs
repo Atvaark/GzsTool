@@ -21,7 +21,7 @@ namespace GzsTool.Pftxs
         public string FileName { get; set; }
 
         [XmlIgnore]
-        public byte[] Data { get; set; }
+        public long DataOffset { get; set; }
 
         [XmlElement("PsubFile")]
         public PsubFile PsubFile { get; set; }
@@ -39,6 +39,14 @@ namespace GzsTool.Pftxs
             input.Position = FileNameOffset;
             FileName = reader.ReadNullTerminatedString();
             input.Position = position;
+        }
+
+        public byte[] ReadData(Stream input)
+        {
+            input.Position = DataOffset;
+            byte[] result = new byte[FileSize];
+            input.Read(result, 0, FileSize);
+            return result;
         }
 
         public void Write(Stream output)

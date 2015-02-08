@@ -8,7 +8,12 @@ namespace GzsTool
     {
         internal static void Skip(this BinaryReader reader, int count)
         {
-            reader.BaseStream.Seek(count, SeekOrigin.Current);
+            reader.BaseStream.Skip(count);
+        }
+
+        internal static void Skip(this Stream stream, int count)
+        {
+            stream.Seek(count, SeekOrigin.Current);
         }
 
         internal static void WriteZeros(this BinaryWriter writer, int count)

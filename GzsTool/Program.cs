@@ -39,6 +39,7 @@ namespace GzsTool
                     if (path.EndsWith(".pftxs", StringComparison.InvariantCultureIgnoreCase))
                     {
                         ReadPftxsArchive(path);
+                        return;
                     }
                     if (path.EndsWith(".xml", StringComparison.CurrentCultureIgnoreCase))
                     {

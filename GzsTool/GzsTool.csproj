@@ -54,8 +54,6 @@
     <Compile Include="Fpk\FpkType.cs" />
     <Compile Include="Pftxs\PftxsFile.cs" />
     <Compile Include="Pftxs\PftxsFileEntry.cs" />
-    <Compile Include="Pftxs\PftxsLogEntry.cs" />
-    <Compile Include="Pftxs\PftxsLogFile.cs" />
     <Compile Include="Pftxs\Psub\PsubFile.cs" />
     <Compile Include="Pftxs\Psub\PsubFileEntry.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
