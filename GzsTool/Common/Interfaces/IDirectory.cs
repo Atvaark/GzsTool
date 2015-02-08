@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -7,6 +8,6 @@ namespace GzsTool.Common.Interfaces
     {
         IEnumerable<IFileSystemEntry> Entries { get; }
         byte[] ReadFile(string filePath);
-        void WriteFile(string filePath, Stream fileContentStream);
+        void WriteFile(string filePath, Lazy<Stream> fileContentStream);
     }
 }

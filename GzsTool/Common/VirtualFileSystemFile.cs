@@ -1,16 +1,18 @@
-﻿using GzsTool.Common.Interfaces;
+﻿using System;
+using System.IO;
+using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Common
 {
     public class VirtualFileSystemFile : IFile
     {
-        private readonly byte[] _content;
         private readonly string _name;
+        private readonly Lazy<Stream> _dataStream;
 
-        public VirtualFileSystemFile(string name, byte[] content)
+        public VirtualFileSystemFile(string name, Lazy<Stream> dataStream)
         {
+            _dataStream = dataStream;
             _name = name;
-            _content = content;
         }
 
         public string Name
@@ -20,7 +22,7 @@ namespace GzsTool.Common
 
         public byte[] Content
         {
-            get { return _content; }
+            get { return _dataStream.Value.ToArray(); }
         }
     }
 }

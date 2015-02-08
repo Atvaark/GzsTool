@@ -69,7 +69,7 @@ namespace GzsTool.Gzs
                 gzsEntry.Write(output);
             }
 
-            uint sizeSum = (uint) Entries.Sum(e => e.Size);
+            uint sizeSum = (uint) Entries.Sum(e => e.DataSize);
             writer.Write(sizeSum);
             output.AlignWrite(16, 0x00);
 

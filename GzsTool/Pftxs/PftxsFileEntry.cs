@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common.Interfaces;
@@ -15,7 +16,7 @@ namespace GzsTool.Pftxs
         public int FileNameOffset { get; set; }
 
         [XmlIgnore]
-        public int FileSize { get; set; }
+        public int DataSize { get; set; }
 
         [XmlIgnore]
         public string FileName { get; set; }
@@ -33,7 +34,7 @@ namespace GzsTool.Pftxs
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             FileNameOffset = reader.ReadInt32();
-            FileSize = reader.ReadInt32();
+            DataSize = reader.ReadInt32();
 
             long position = input.Position;
             input.Position = FileNameOffset;
@@ -41,11 +42,23 @@ namespace GzsTool.Pftxs
             input.Position = position;
         }
 
+        public Lazy<Stream> ReadDataLazy(Stream input)
+        {
+            return new Lazy<Stream>(
+                () =>
+                {
+                    lock (input)
+                    {
+                        return ReadData(input);
+                    }
+                });
+        }
+
         public Stream ReadData(Stream input)
         {
             input.Position = DataOffset;
-            byte[] result = new byte[FileSize];
-            input.Read(result, 0, FileSize);
+            byte[] result = new byte[DataSize];
+            input.Read(result, 0, DataSize);
             return new MemoryStream(result);
         }
 
@@ -53,7 +66,7 @@ namespace GzsTool.Pftxs
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(FileNameOffset);
-            writer.Write(FileSize);
+            writer.Write(DataSize);
         }
 
         public void WriteFileName(Stream output)
@@ -65,7 +78,7 @@ namespace GzsTool.Pftxs
         public void WriteData(Stream output, IDirectory inputDirectory)
         {
             byte[] data = inputDirectory.ReadFile(FilePath);
-            FileSize = data.Length;
+            DataSize = data.Length;
             output.Write(data, 0, data.Length);
         }
 

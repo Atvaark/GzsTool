@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -5,7 +6,7 @@ using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Common
 {
-    internal class FileSystemDirectory : IDirectory
+    public class FileSystemDirectory : IDirectory
     {
         private readonly string _baseDirectoryPath;
         private readonly string _name;
@@ -27,16 +28,16 @@ namespace GzsTool.Common
             }
         }
 
-        public void WriteFile(string filePath, Stream fileContentStream)
+        public void WriteFile(string filePath, Lazy<Stream> fileContentStream)
         {
             string outputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
             using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
             {
-                fileContentStream.CopyTo(output);
+                fileContentStream.Value.CopyTo(output);
             }
         }
-
+        
         public IEnumerable<IFileSystemEntry> Entries
         {
             get { return GetEntries(); }

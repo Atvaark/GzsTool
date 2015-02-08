@@ -1,10 +1,11 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace GzsTool.Common
 {
     public class FileDataStreamContainer
     {
-        public Stream DataStream { get; set; }
         public string FileName { get; set; }
+        public Lazy<Stream> DataStream { get; set; }
     }
 }

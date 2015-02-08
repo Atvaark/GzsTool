@@ -6,18 +6,18 @@ using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Common
 {
-    internal class VirtualFileSystemDirectory : IDirectory
+    public class VirtualFileSystemDirectory : IDirectory
     {
         public const string DirectorySeparator = "\\";
-        private readonly List<IDirectory> _directories;
-        private readonly List<IFile> _files;
+        private readonly List<VirtualFileSystemDirectory> _directories;
+        private readonly List<VirtualFileSystemFile> _files;
         private readonly string _name;
 
         public VirtualFileSystemDirectory(string name)
         {
             _name = name;
-            _files = new List<IFile>();
-            _directories = new List<IDirectory>();
+            _files = new List<VirtualFileSystemFile>();
+            _directories = new List<VirtualFileSystemDirectory>();
         }
 
         public string Name
@@ -38,23 +38,23 @@ namespace GzsTool.Common
             return _directories.Single(d => d.Name == subDirectory).ReadFile(subDirectoryFilePath);
         }
 
-        public void WriteFile(string filePath, Stream fileContentStream)
+        public void WriteFile(string filePath, Lazy<Stream> fileContentStream)
         {
             int index = filePath.IndexOf(DirectorySeparator, StringComparison.Ordinal);
             if (index == -1)
             {
-                VirtualFileSystemFile file = new VirtualFileSystemFile(filePath, fileContentStream.ToArray());
+                VirtualFileSystemFile file = new VirtualFileSystemFile(filePath, fileContentStream);
                 AddFile(file);
                 return;
             }
             string subDirectory = filePath.Substring(0, index);
             string subDirectoryFilePath = filePath.Substring(index + DirectorySeparator.Length,
                 filePath.Length - index - DirectorySeparator.Length);
-            IDirectory existingSubDirectory = _directories.SingleOrDefault(d => d.Name == subDirectory);
+            var existingSubDirectory = _directories.SingleOrDefault(d => d.Name == subDirectory);
             if (existingSubDirectory == null)
             {
                 existingSubDirectory = new VirtualFileSystemDirectory(subDirectory);
-                _directories.Add(existingSubDirectory);
+                AddDirectory(existingSubDirectory);
             }
             existingSubDirectory.WriteFile(subDirectoryFilePath, fileContentStream);
         }

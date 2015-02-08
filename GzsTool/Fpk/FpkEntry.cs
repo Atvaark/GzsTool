@@ -67,12 +67,24 @@ namespace GzsTool.Fpk
             FilePathFpkString = fileName;
         }
 
+        private Lazy<Stream> ReadDataLazy(Stream input)
+        {
+            return new Lazy<Stream>(
+                () =>
+                {
+                    lock (input)
+                    {
+                        return ReadData(input);
+                    }
+                });
+        }
+
         private Stream ReadData(Stream input)
         {
-            BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             input.Position = DataOffset;
-            MemoryStream dataStream = new MemoryStream(reader.ReadBytes(DataSize));
-            return dataStream;
+            byte[] result = new byte[DataSize];
+            input.Read(result, 0, DataSize);
+            return new MemoryStream(result);
         }
 
         private string GetFpkEntryFileName()
@@ -118,7 +130,7 @@ namespace GzsTool.Fpk
         {
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
-                DataStream = ReadData(input),
+                DataStream = ReadDataLazy(input),
                 FileName = GetFpkEntryFileName()
             };
             return fileDataStreamContainer;

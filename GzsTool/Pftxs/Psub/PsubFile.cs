@@ -41,7 +41,7 @@ namespace GzsTool.Pftxs.Psub
             input.AlignRead(16);
             foreach (var entry in Entries)
             {
-                input.Skip(entry.Size);
+                input.Skip(entry.DataSize);
                 input.AlignRead(16);
             }
         }
@@ -56,7 +56,7 @@ namespace GzsTool.Pftxs.Psub
             output.AlignWrite(16, 0xCC);
             foreach (var entry in Entries)
             {
-                entry.Offset = Convert.ToInt32(output.Position);
+                entry.DataOffset = Convert.ToInt32(output.Position);
                 entry.WriteData(output, inputDirectory);
                 output.AlignWrite(16, 0xCC);
             }

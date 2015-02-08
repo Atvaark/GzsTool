@@ -63,7 +63,7 @@ namespace GzsTool.Pftxs
             foreach (var entry in Entries)
             {
                 entry.DataOffset = input.Position;
-                input.Skip(entry.FileSize);
+                input.Skip(entry.DataSize);
                 entry.PsubFile = PsubFile.ReadPsubFile(input);
             }
             int magicNumber3 = reader.ReadInt32();
@@ -90,7 +90,7 @@ namespace GzsTool.Pftxs
                 file.FilePath = relativeFilePath;
                 FileDataStreamContainer ftexContainer = new FileDataStreamContainer
                 {
-                    DataStream = file.ReadData(input),
+                    DataStream = file.ReadDataLazy(input),
                     FileName = relativeFilePath
                 };
                 yield return ftexContainer;
@@ -103,7 +103,7 @@ namespace GzsTool.Pftxs
                     psubFileEntry.FilePath = relativeSubFilePath;
                     FileDataStreamContainer ftexsContainer = new FileDataStreamContainer
                     {
-                        DataStream = psubFileEntry.ReadData(input),
+                        DataStream = psubFileEntry.ReadDataLazy(input),
                         FileName = relativeSubFilePath
                     };
                     yield return ftexsContainer;

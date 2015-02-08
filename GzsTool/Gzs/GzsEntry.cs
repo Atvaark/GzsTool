@@ -18,10 +18,10 @@ namespace GzsTool.Gzs
         public bool FileNameFound { get; set; }
 
         [XmlIgnore]
-        public uint Offset { get; set; }
+        public uint DataOffset { get; set; }
 
         [XmlIgnore]
-        public uint Size { get; set; }
+        public uint DataSize { get; set; }
 
         [XmlAttribute("FilePath")]
         public string FilePath { get; set; }
@@ -42,25 +42,37 @@ namespace GzsTool.Gzs
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             Hash = reader.ReadUInt64();
-            Offset = reader.ReadUInt32();
-            Size = reader.ReadUInt32();
+            DataOffset = reader.ReadUInt32();
+            DataSize = reader.ReadUInt32();
             string filePath;
             FileNameFound = TryGetFilePath(out filePath);
             FilePath = filePath;
         }
 
+        private Lazy<Stream> ReadDataLazy(Stream input)
+        {
+            return new Lazy<Stream>(
+                () =>
+                {
+                    lock (input)
+                    {
+                        return ReadData(input);
+                    }
+                });
+        }
+
         private Stream ReadData(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            input.Position = 16*Offset;
-            byte[] data = reader.ReadBytes((int) Size);
-            data = Encryption.DeEncryptQar(data, Offset);
+            input.Position = 16*DataOffset;
+            byte[] data = reader.ReadBytes((int) DataSize);
+            data = Encryption.DeEncryptQar(data, DataOffset);
             const uint keyConstant = 0xA0F8EFE6;
             uint peekData = BitConverter.ToUInt32(data, 0);
             if (peekData == keyConstant)
             {
                 uint key = BitConverter.ToUInt32(data, 4);
-                Size -= 8;
+                DataSize -= 8;
                 byte[] data2 = new byte[data.Length - 8];
                 Array.Copy(data, 8, data2, 0, data.Length - 8);
                 data = Encryption.DeEncrypt(data2, key);
@@ -87,11 +99,11 @@ namespace GzsTool.Gzs
 
         public void WriteData(Stream output, IDirectory inputDirectory)
         {
-            Offset = (uint) output.Position/16;
+            DataOffset = (uint) output.Position/16;
             byte[] data = inputDirectory.ReadFile(GetGzsEntryFileName());
-            data = Encryption.DeEncryptQar(data, Offset);
+            data = Encryption.DeEncryptQar(data, DataOffset);
             // TODO: Encrypt the data if a key is set for the entry.
-            Size = (uint) data.Length;
+            DataSize = (uint) data.Length;
             output.Write(data, 0, data.Length);
         }
 
@@ -99,8 +111,8 @@ namespace GzsTool.Gzs
         {
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash);
-            writer.Write(Offset);
-            writer.Write(Size);
+            writer.Write(DataOffset);
+            writer.Write(DataSize);
         }
 
         public void CalculateHash()
@@ -113,7 +125,7 @@ namespace GzsTool.Gzs
         {
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
-                DataStream = ReadData(input),
+                DataStream = ReadDataLazy(input),
                 FileName = GetGzsEntryFileName()
             };
             return fileDataStreamContainer;

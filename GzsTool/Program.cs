@@ -13,7 +13,7 @@ using GzsTool.Utility;
 
 namespace GzsTool
 {
-    internal static class Program
+    public static class Program
     {
         private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
             new[] {typeof (FpkFile), typeof (GzsFile), typeof (PftxsFile)});
@@ -57,7 +57,7 @@ namespace GzsTool
             ShowUsageInfo();
         }
 
-        private static void ReadDictionaries()
+        public static void ReadDictionaries()
         {
             string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             const string gzsDictionaryName = "gzs_dictionary.txt";
@@ -119,7 +119,7 @@ namespace GzsTool
                 foreach (var exportedFile in gzsFile.ExportFiles(input))
                 {
                     Console.WriteLine(exportedFile.FileName);
-                    WriteExportedFile(exportedFile, outputDirectory);
+                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
                 }
                 ArchiveSerializer.Serialize(xmlOutput, gzsFile);
             }
@@ -157,7 +157,7 @@ namespace GzsTool
                 foreach (var exportedFile in fpkFile.ExportFiles(input))
                 {
                     Console.WriteLine(exportedFile.FileName);
-                    WriteExportedFile(exportedFile, outputDirectory);
+                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
                 }
                 ArchiveSerializer.Serialize(xmlOutput, fpkFile);
             }
@@ -180,16 +180,12 @@ namespace GzsTool
                 foreach (var exportedFile in pftxsFile.ExportFiles(input))
                 {
                     Console.WriteLine(exportedFile.FileName);
-                    WriteExportedFile(exportedFile, outputDirectory);
+                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
                 }
                 ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
             }
         }
 
-        private static void WriteExportedFile(FileDataStreamContainer fileDataStreamContainer, IDirectory outputDirectoryInterface)
-        {
-            outputDirectoryInterface.WriteFile(fileDataStreamContainer.FileName, fileDataStreamContainer.DataStream);
-        }
 
         private static void WriteArchive(string path)
         {
