@@ -49,16 +49,15 @@ namespace GzsTool.Gzs
             FilePath = filePath;
         }
 
-        private Lazy<Stream> ReadDataLazy(Stream input)
+        private Func<Stream> ReadDataLazy(Stream input)
         {
-            return new Lazy<Stream>(
-                () =>
+            return () =>
+            {
+                lock (input)
                 {
-                    lock (input)
-                    {
-                        return ReadData(input);
-                    }
-                });
+                    return ReadData(input);
+                }
+            };
         }
 
         private Stream ReadData(Stream input)

@@ -8,6 +8,6 @@ namespace GzsTool.Common.Interfaces
     {
         IEnumerable<IFileSystemEntry> Entries { get; }
         byte[] ReadFile(string filePath);
-        void WriteFile(string filePath, Lazy<Stream> fileContentStream);
+        void WriteFile(string filePath, Func<Stream> fileContentStream);
     }
 }

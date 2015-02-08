@@ -38,7 +38,7 @@ namespace GzsTool.Common
             return _directories.Single(d => d.Name == subDirectory).ReadFile(subDirectoryFilePath);
         }
 
-        public void WriteFile(string filePath, Lazy<Stream> fileContentStream)
+        public void WriteFile(string filePath, Func<Stream> fileContentStream)
         {
             int index = filePath.IndexOf(DirectorySeparator, StringComparison.Ordinal);
             if (index == -1)

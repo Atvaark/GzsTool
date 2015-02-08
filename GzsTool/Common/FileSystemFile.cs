@@ -21,5 +21,10 @@ namespace GzsTool.Common
         {
             get { return File.ReadAllBytes(_path); }
         }
+
+        public Stream ContentStream
+        {
+            get { return new FileStream(_path, FileMode.Open); }
+        }
     }
 }

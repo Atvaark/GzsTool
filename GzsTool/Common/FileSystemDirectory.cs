@@ -28,13 +28,13 @@ namespace GzsTool.Common
             }
         }
 
-        public void WriteFile(string filePath, Lazy<Stream> fileContentStream)
+        public void WriteFile(string filePath, Func<Stream> fileContentStream)
         {
             string outputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
             using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
             {
-                fileContentStream.Value.CopyTo(output);
+                fileContentStream().CopyTo(output);
             }
         }
         

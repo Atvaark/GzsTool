@@ -42,16 +42,15 @@ namespace GzsTool.Pftxs
             input.Position = position;
         }
 
-        public Lazy<Stream> ReadDataLazy(Stream input)
+        public Func<Stream> ReadDataLazy(Stream input)
         {
-            return new Lazy<Stream>(
-                () =>
+            return () =>
+            {
+                lock (input)
                 {
-                    lock (input)
-                    {
-                        return ReadData(input);
-                    }
-                });
+                    return ReadData(input);
+                }
+            };
         }
 
         public Stream ReadData(Stream input)
