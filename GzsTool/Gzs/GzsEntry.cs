@@ -76,7 +76,6 @@ namespace GzsTool.Gzs
                 Array.Copy(data, 8, data2, 0, data.Length - 8);
                 data = Encryption.DeEncrypt(data2, key);
             }
-
             return new MemoryStream(data);
         }
 
@@ -117,7 +116,7 @@ namespace GzsTool.Gzs
         public void CalculateHash()
         {
             if (Hash == 0)
-                Hash = Hashing.HashFileNameWithExtension(FilePath); //
+                Hash = Hashing.HashFileNameWithExtension(FilePath);
         }
 
         public FileDataStreamContainer Export(Stream input)

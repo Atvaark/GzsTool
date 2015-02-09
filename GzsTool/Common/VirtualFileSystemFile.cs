@@ -7,7 +7,7 @@ namespace GzsTool.Common
     public class VirtualFileSystemFile : IFile
     {
         private readonly string _name;
-        private readonly Func<Stream> _dataStream;
+        private Func<Stream> _dataStream;
 
         public VirtualFileSystemFile(string name, Func<Stream> dataStream)
         {
@@ -28,6 +28,17 @@ namespace GzsTool.Common
         public Stream ContentStream
         {
             get { return _dataStream(); }
+        }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        public void ResetStreamFactoryMethod()
+        {
+            // HACK: In case the dataStream contains a huge memory stream.
+            _dataStream = () => new MemoryStream();
         }
     }
 }

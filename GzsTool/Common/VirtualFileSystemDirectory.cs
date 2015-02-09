@@ -83,5 +83,10 @@ namespace GzsTool.Common
         {
             _files.Add(file);
         }
+
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
