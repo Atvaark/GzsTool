@@ -53,3 +53,7 @@ Repacking a pftxs file. This will create the "file_name.pftxs" archive.
 ```
 GzsTool file_path.pftxs.xml
 ```
+
+Remarks
+--------
+* Repacking a g0s file without changes will result in a smaller file. This is due to the tool not reencrypting formerly encrypted files and thereby not requiring to store the decryption keys. 
