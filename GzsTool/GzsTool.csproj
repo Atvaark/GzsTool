@@ -39,6 +39,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -57,9 +58,8 @@
     <Compile Include="Common\VirtualFileSystemFile.cs" />
     <Compile Include="Fpk\FpkType.cs" />
     <Compile Include="Pftxs\PftxsFile.cs" />
-    <Compile Include="Pftxs\PftxsFileEntry.cs" />
-    <Compile Include="Pftxs\Psub\PsubFile.cs" />
-    <Compile Include="Pftxs\Psub\PsubFileEntry.cs" />
+    <Compile Include="Pftxs\PftxsFtexFile.cs" />
+    <Compile Include="Pftxs\PftxsFtexsFileEntry.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Utility\Encryption.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
