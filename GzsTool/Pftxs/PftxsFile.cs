@@ -62,13 +62,16 @@ namespace GzsTool.Pftxs
             foreach (var file in Files)
             {
                 // TODO: Lookup name of the file.
-                string name = Guid.NewGuid().ToString();
-                foreach (var entry in file.Entries.Select((value, i) => new {e = value, i}))
+                string name = file.Hash.ToString();
+                foreach (var entry in file.Entries.Select((value, i) => new { e = value, i }))
                 {
-                    string extension = entry.i == 0 ? ".ftex" : ".1.ftexs";
+                    string extension = entry.i == 0
+                        ? ".ftex"
+                        : "." + entry.i + ".ftexs";
                     yield return new FileDataStreamContainer
                     {
-                        DataStream = () => new MemoryStream(entry.e.Data), FileName = name + extension
+                        DataStream = () => new MemoryStream(entry.e.Data),
+                        FileName = name + extension
                     };
                 }
             }

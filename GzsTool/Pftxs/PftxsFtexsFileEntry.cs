@@ -8,11 +8,15 @@ namespace GzsTool.Pftxs
 {
     public class PftxsFtexsFileEntry
     {
+        [XmlAttribute("Hash")]
         public ulong Hash { get; set; }
+
         [XmlIgnore]
         public int Offset { get; set; }
+
         [XmlIgnore]
         public int Size { get; set; }
+
         [XmlIgnore]
         public byte[] Data { get; set; }
 
