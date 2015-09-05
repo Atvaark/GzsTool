@@ -9,6 +9,7 @@ using GzsTool.Common.Interfaces;
 using GzsTool.Fpk;
 using GzsTool.Gzs;
 using GzsTool.Pftxs;
+using GzsTool.Qar;
 using GzsTool.Utility;
 
 namespace GzsTool
@@ -29,6 +30,11 @@ namespace GzsTool
                     if (path.EndsWith(".g0s", StringComparison.CurrentCultureIgnoreCase))
                     {
                         ReadGzsArchive(path);
+                        return;
+                    }
+                    if (path.EndsWith(".dat", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        ReadQarFile(path);
                         return;
                     }
                     if (path.EndsWith(".fpk", StringComparison.CurrentCultureIgnoreCase) ||
@@ -56,7 +62,7 @@ namespace GzsTool
             }
             ShowUsageInfo();
         }
-
+        
         public static void ReadDictionaries()
         {
             string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -123,6 +129,31 @@ namespace GzsTool
                 }
                 ArchiveSerializer.Serialize(xmlOutput, gzsFile);
             }
+        }
+
+
+        private static void ReadQarFile(string path)
+        {
+            string fileDirectory = Path.GetDirectoryName(path);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            string outputDirectoryPath = Path.Combine(fileDirectory, fileNameWithoutExtension);
+            string xmlOutputPath = Path.Combine(fileDirectory,
+                string.Format("{0}.xml", Path.GetFileName(path)));
+            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
+
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
+            {
+                QarFile qarFile = QarFile.ReadQarFile(input);
+                qarFile.Name = Path.GetFileName(path);
+                foreach (var exportedFile in qarFile.ExportFiles(input))
+                {
+                    Console.WriteLine(exportedFile.FileName);
+                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
+                }
+                ArchiveSerializer.Serialize(xmlOutput, qarFile);
+            }
+
         }
 
         private static void ReadFpkArchives(string path)
