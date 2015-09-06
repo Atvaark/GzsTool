@@ -17,7 +17,7 @@ namespace GzsTool
     public static class Program
     {
         private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
-            new[] {typeof (FpkFile), typeof (GzsFile), typeof (PftxsFile)});
+            new[] {typeof (FpkFile), typeof (GzsFile), typeof (PftxsFile), typeof(QarFile)});
 
         private static void Main(string[] args)
         {

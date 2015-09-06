@@ -160,7 +160,11 @@ namespace GzsTool.Utility
 
         internal static bool TryGetFileNameFromHash(ulong hash, int fileExtensionId, out string fileName)
         {
-            string fileExtension = TypeExtensions[fileExtensionId];
+            string fileExtension;
+            if (!TypeExtensions.TryGetValue(fileExtensionId, out fileExtension))
+            {
+                fileExtension = ".bin";
+            }
             ulong hashMasked = hash & 0xFFFFFFFFFFFF;
 
             bool fileNameFound = HashNameDictionary.TryGetValue(hashMasked, out fileName);

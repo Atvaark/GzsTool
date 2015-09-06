@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Common.Interfaces;
 
@@ -11,6 +12,10 @@ namespace GzsTool.Qar
     public class QarFile : ArchiveFile
     {
         public string Name { get; set; }
+        public uint Flags { get; set; }
+
+        [XmlArray("Entries")]
+        public List<QarEntry> Entries { get; private set; }
 
         public static QarFile ReadQarFile(FileStream input)
         {
@@ -28,7 +33,7 @@ namespace GzsTool.Qar
 
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
             uint magicNumber = reader.ReadUInt32(); // SQAR
-            uint flags = reader.ReadUInt32() ^ xorMask1;
+            Flags = reader.ReadUInt32() ^ xorMask1;
             uint fileCount = reader.ReadUInt32() ^ xorMask2;
             uint unknownCount = reader.ReadUInt32() ^ xorMask3;
             uint unknown3 = reader.ReadUInt32() ^ xorMask4;
@@ -36,96 +41,23 @@ namespace GzsTool.Qar
             uint unknown5 = reader.ReadUInt32() ^ xorMask1;
             uint unknown6 = reader.ReadUInt32() ^ xorMask2;
 
-            int shift = (flags & 0x800) > 0 ? 12 : 10;
+            int shift = (Flags & 0x800) > 0 ? 12 : 10;
 
             byte[] sectionsData = reader.ReadBytes((int)(8 * fileCount));
             ulong[] sections = DecryptSectionList(fileCount, sectionsData);
             byte[] unknownSectionData = reader.ReadBytes((int)(16 * unknownCount));
 
+            List<QarEntry> entries = new List<QarEntry>();
             foreach (var section in sections)
             {
                 ulong sectionOffset = section >> 40 << shift;
                 reader.BaseStream.Position = (long)sectionOffset;
-                uint hashLow = reader.ReadUInt32() ^ xorMask1;
-                uint hashHigh = reader.ReadUInt32() ^ xorMask1;
-                uint size1 = reader.ReadUInt32() ^ xorMask2;
-                uint size2 = reader.ReadUInt32() ^ xorMask3;
-                uint sectionUnknown5 = reader.ReadUInt32() ^ xorMask4;
-                uint sectionUnknown6 = reader.ReadUInt32() ^ xorMask1;
-                uint sectionUnknown7 = reader.ReadUInt32() ^ xorMask1;
-                uint sectionUnknown8 = reader.ReadUInt32() ^ xorMask2;
 
-                byte[] sectionData = reader.ReadBytes((int)size1);
-                DecryptSection(sectionData, hashLow);
-
-                uint magicEntry = BitConverter.ToUInt32(sectionData, 0);
-                uint key = 0;
-                if (magicEntry == 0xA0F8EFE6)
-                {
-                    key = BitConverter.ToUInt32(sectionData, 4);
-                    size1 -= 8;
-                    // TODO: Decrypt
-                }
-                else if (magicEntry == 0xE3F8EFE6)
-                {
-                    key = BitConverter.ToUInt32(sectionData, 4);
-                    size1 -= 16;
-                    // TODO: Decrypt
-                }
-
-                // TODO: Add these to a property that gets saved in the resulting XML.
+                var entry = new QarEntry();
+                entry.Read(reader);
+                entries.Add(entry);
             }
-        }
-
-        private void DecryptSection(byte[] sectionData, uint hashLow)
-        {
-            uint[] decryptionTable =
-            {
-                0xBB8ADEDB,
-                0x65229958,
-                0x08453206,
-                0x88121302,
-                0x4C344955,
-                0x2C02F10C,
-                0x4887F823,
-                0xF3818583,
-                //0x40C90FDB,
-                //0x3FC90FDB,
-                //0x3F490FDB,
-                //0x3EA2F983,
-                //0x3C8EFA35,
-                //0x42652EE0,
-                //0x40C90FDB,
-                //0x3FC90FDB,
-                //0x3F490FDB,
-                //0x3EA2F983,
-                //0x3C8EFA35,
-                //0x42652EE0
-            };
-
-            int blocks = sectionData.Length / sizeof(ulong);
-            for (int i = 0; i < blocks; i++)
-            {
-                int offset1 = i * sizeof(ulong);
-                int offset2 = i * sizeof(ulong) + sizeof(uint);
-                int index = (int)(2 * ((hashLow + offset1 / 11) % 4));
-                uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index];
-                uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1];
-                Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
-                Buffer.BlockCopy(BitConverter.GetBytes(u2), 0, sectionData, offset2, sizeof(uint));
-            }
-
-            int remaining = sectionData.Length % sizeof(ulong);
-            for (int i = 0; i < remaining; i++)
-            {
-                int offset = blocks * sizeof(long) + i * sizeof(byte);
-                int index = (int)(2 * ((hashLow + (offset - (offset % sizeof(long))) / 11) % 4));
-                int decryptionIndex = offset % sizeof(long);
-                uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
-                byte xorMaskByte = (byte) ((xorMask >> (8 * decryptionIndex)) & 0xff);
-                byte b1 = (byte)(sectionData[offset] ^ xorMaskByte);
-                sectionData[offset] = b1;
-            }
+            Entries = entries;
         }
 
         private static ulong[] DecryptSectionList(uint fileCount, byte[] sections)
@@ -160,7 +92,7 @@ namespace GzsTool.Qar
 
         public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
-            throw new System.NotImplementedException();
+            return Entries.Select(gzsEntry => gzsEntry.Export(input));
         }
 
         public override void Write(Stream output, IDirectory inputDirectory)

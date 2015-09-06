@@ -23,6 +23,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -60,6 +61,7 @@
     <Compile Include="Pftxs\PftxsFile.cs" />
     <Compile Include="Pftxs\PftxsFtexFile.cs" />
     <Compile Include="Pftxs\PftxsFtexsFileEntry.cs" />
+    <Compile Include="Qar\QarEntry.cs" />
     <Compile Include="Qar\QarFile.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Utility\Encryption.cs" />
