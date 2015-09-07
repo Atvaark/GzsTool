@@ -1,5 +1,5 @@
 # GzsTool
-C# Fox Engine g0s, fpk, fpkd and pftxs unpacker/repacker
+C# Fox Engine dat/qar, ~~g0s,~~ fpk, fpkd and pftxs unpacker/repacker
  
 Requirements
 --------
@@ -17,9 +17,9 @@ GzsTool file_path|folder_path
 Examples
 --------
 
-Unpacking a g0s file. This will unpack all files to the folder called "file_name" and will create a "file_name.g0s.xml" file.
+Unpacking a dat file. This will unpack all files to the folder called "file_name" and will create a "file_name.dat.xml" file.
 ```
-GzsTool file_path.g0s
+GzsTool file_path.dat
 ```
  
 Unpacking an fpk/fpkd file. This will unpack all files to the folder called "file_name_fpk/file_name_fpkd" and will create a "file_name.fpk.xml/file_name.fpkd.xml" file.
@@ -38,9 +38,9 @@ Unpacking all fpk and fpkd files in a folder. This will unpack all files to thei
 GzsTool folder_path
 ```
 
-Repacking a g0s file. This will create the "file_name.g0s" archive.
+Repacking a dat file. This will create the "file_name.dat" archive.
 ```
-GzsTool file_path.g0s.xml
+GzsTool file_path.dat.xml
 ```
 
 Repacking an fpk/fpkd file. This will create the "file_name.fpk/file_name.fpkd" archive.
@@ -56,4 +56,5 @@ GzsTool file_path.pftxs.xml
 
 Remarks
 --------
-* Repacking a g0s file without changes will result in a smaller file. This is due to the tool not reencrypting formerly encrypted files and thereby not requiring to store the decryption keys. 
+* Repacking a dat file without changes will result in a smaller file. This is due to the tool not reencrypting formerly encrypted files and thereby not requiring to store the decryption keys.
+* Unpacking Ground Zeroes g0s and pftxs files will only work with [v0.2 (Ground Zeroes)](https://github.com/Atvaark/GzsTool/releases/tag/v0.2)
