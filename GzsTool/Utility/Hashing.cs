@@ -17,133 +17,184 @@ namespace GzsTool.Utility
         private static readonly Dictionary<byte[], string> Md5HashNameDictionary =
             new Dictionary<byte[], string>(new StructuralEqualityComparer<byte[]>());
 
-        private static readonly Dictionary<int, string> TypeExtensions = new Dictionary<int, string>
+        private static readonly List<string> FileExtensions = new List<string>
         {
-            {0, ""},
-            {1, ".xml"},
-            {2, ".json"},
-            {3, ".ese"},
-            {4, ".fxp"},
-            {5, ".fpk"},
-            {6, ".fpkd"},
-            {7, ".fpkl"},
-            {8, ".aib"},
-            {9, ".frig"},
-            {10, ".mtar"},
-            {11, ".gani"},
-            {12, ".evb"},
-            {13, ".evf"},
-            {14, ".ag.evf"},
-            {15, ".cc.evf"},
-            {16, ".fx.evf"},
-            {17, ".sd.evf"},
-            {18, ".vo.evf"},
-            {19, ".fsd"},
-            {20, ".fage"},
-            {21, ".fago"},
-            {22, ".fag"},
-            {23, ".fagx"},
-            {24, ".fagp"},
-            {25, ".frdv"},
-            {26, ".fdmg"},
-            {27, ".des"},
-            {28, ".fdes"},
-            {29, ".aibc"},
-            {30, ".mtl"},
-            {31, ".fsml"},
-            {32, ".fox"},
-            {33, ".fox2"},
-            {34, ".las"},
-            {35, ".fstb"},
-            {36, ".lua"},
-            {37, ".fcnp"},
-            {38, ".fcnpx"},
-            {39, ".sub"},
-            {40, ".fova"},
-            {41, ".lad"},
-            {42, ".lani"},
-            {43, ".vfx"},
-            {44, ".vfxbin"},
-            {45, ".frt"},
-            {46, ".gpfp"},
-            {47, ".gskl"},
-            {48, ".geom"},
-            {49, ".tgt"},
-            {50, ".path"},
-            {51, ".fmdl"},
-            {52, ".ftex"},
-            {53, ".htre"},
-            {54, ".tre2"},
-            {55, ".grxla"},
-            {56, ".grxoc"},
-            {57, ".mog"},
-            {58, ".pftxs"},
-            {59, ".nav2"},
-            {60, ".bnd"},
-            {61, ".parts"},
-            {62, ".phsd"},
-            {63, ".ph"},
-            {64, ".veh"},
-            {65, ".sdf"},
-            {66, ".sad"},
-            {67, ".sim"},
-            {68, ".fclo"},
-            {69, ".clo"},
-            {70, ".lng"},
-            {71, ".uig"},
-            {72, ".uil"},
-            {73, ".uif"},
-            {74, ".uia"},
-            {75, ".fnt"},
-            {76, ".utxl"},
-            {77, ".uigb"},
-            {78, ".vfxdb"},
-            {79, ".rbs"},
-            {80, ".aia"},
-            {81, ".aim"},
-            {82, ".aip"},
-            {83, ".aigc"},
-            {84, ".aig"},
-            {85, ".ait"},
-            {86, ".fsm"},
-            {87, ".obr"},
-            {88, ".obrb"},
-            {89, ".lpsh"},
-            {90, ".sani"},
-            {91, ".rdb"},
-            {92, ".phep"},
-            {93, ".simep"},
-            {94, ".atsh"},
-            {95, ".txt"},
-            {96, ".1.ftexs"},
-            {97, ".2.ftexs"},
-            {98, ".3.ftexs"},
-            {99, ".4.ftexs"},
-            {100, ".5.ftexs"},
-            {101, ".sbp"},
-            {102, ".mas"},
-            {103, ".rdf"},
-            {104, ".wem"},
-            {105, ".lba"},
-            {106, ".uilb"}
+            "1.ftexs",
+            "1.nav2",
+            "2.ftexs",
+            "3.ftexs",
+            "4.ftexs",
+            "5.ftexs",
+            "6.ftexs",
+            "ag.evf",
+            "aia",
+            "aib",
+            "aibc",
+            "aig",
+            "aigc",
+            "aim",
+            "aip",
+            "ait",
+            "atsh",
+            "bnd",
+            "bnk",
+            "cc.evf",
+            "clo",
+            "csnav",
+            "dat",
+            "des",
+            "dnav",
+            "dnav2",
+            "eng.lng",
+            "ese",
+            "evb",
+            "evf",
+            "fag",
+            "fage",
+            "fago",
+            "fagp",
+            "fagx",
+            "fclo",
+            "fcnp",
+            "fcnpx",
+            "fdes",
+            "fdmg",
+            "ffnt",
+            "fmdl",
+            "fmdlb",
+            "fmtt",
+            "fnt",
+            "fova",
+            "fox",
+            "fox2",
+            "fpk",
+            "fpkd",
+            "fpkl",
+            "frdv",
+            "fre.lng",
+            "frig",
+            "frt",
+            "fsd",
+            "fsm",
+            "fsml",
+            "fsop",
+            "fstb",
+            "ftex",
+            "fv2",
+            "fx.evf",
+            "fxp",
+            "gani",
+            "geom",
+            "ger.lng",
+            "gpfp",
+            "grxla",
+            "grxoc",
+            "gskl",
+            "htre",
+            "info",
+            "ita.lng",
+            "jpn.lng",
+            "json",
+            "lad",
+            "ladb",
+            "lani",
+            "las",
+            "lba",
+            "lng",
+            "lpsh",
+            "lua",
+            "mas",
+            "mbl",
+            "mog",
+            "mtar",
+            "mtl",
+            "nav2",
+            "nta",
+            "obr",
+            "obrb",
+            "parts",
+            "path",
+            "pftxs",
+            "ph",
+            "phep",
+            "phsd",
+            "por.lng",
+            "qar",
+            "rbs",
+            "rdb",
+            "rdf",
+            "rnav",
+            "rus.lng",
+            "sad",
+            "sand",
+            "sani",
+            "sbp",
+            "sd.evf",
+            "sdf",
+            "sim",
+            "simep",
+            "snav",
+            "spa.lng",
+            "spch",
+            "sub",
+            "subp",
+            "tgt",
+            "tre2",
+            "txt",
+            "uia",
+            "uif",
+            "uig",
+            "uigb",
+            "uil",
+            "uilb",
+            "utxl",
+            "veh",
+            "vfx",
+            "vfxbin",
+            "vfxdb",
+            "vnav",
+            "vo.evf",
+            "vpc",
+            "wem",
+            "xml",
         };
 
-        private static ulong HashFileName(string text)
+        private static readonly Dictionary<ulong, string> ExtensionsMap = FileExtensions.ToDictionary(HashFileExtension);
+        
+        private static ulong HashFileExtension(string fileExtension)
         {
-            if (text == null) throw new ArgumentNullException("text");
+            return  HashFileName(fileExtension, false) & 0x1FFF;
+        }
+
+        private static ulong HashFileName(string text, bool truncate = true)
+        {
+            // TODO: Skip "/Assets/" ?
+            if (truncate)
+            {
+                int index = text.LastIndexOf('.');
+                text = index == -1 ? text : text.Substring(0, index);
+                text = text.StartsWith("/Assets/") ? text.Substring("/Assets/".Length - 1) : text;
+                text = text.TrimStart('/');
+            }
+
             const ulong seed0 = 0x9ae16a3b2f90404f;
-            ulong seed1 = text.Length > 0 ? (uint) ((text[0]) << 16) + (uint) text.Length : 0;
-            return CityHash.CityHash.CityHash64WithSeeds(text + "\0", seed0, seed1) & 0xFFFFFFFFFFFF;
+            byte[] seed1Bytes = new byte[sizeof(ulong)];
+            for (int i = text.Length - 1, j = 0; i >= 0 && j < sizeof(ulong); i--, j++)
+            {
+                seed1Bytes[j] = Convert.ToByte(text[i]);
+            }
+            ulong seed1 = BitConverter.ToUInt64(seed1Bytes, 0);
+            return CityHash.CityHash.CityHash64WithSeeds(text, seed0, seed1);
         }
 
         public static ulong HashFileNameWithExtension(string filePath)
         {
-            var lookupableExtensions = TypeExtensions
+            var lookupableExtensions = ExtensionsMap
                 .Where(e => e.Value != "" && filePath.EndsWith(e.Value, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
 
             string hashablePart = filePath;
-            int typeId = 0;
+            ulong typeId = 0;
             if (lookupableExtensions.Count() == 1)
             {
                 var lookupableExtension = lookupableExtensions.Single();
@@ -153,17 +204,48 @@ namespace GzsTool.Utility
                     StringComparison.InvariantCultureIgnoreCase);
                 hashablePart = filePath.Substring(0, extensionIndex);
             }
-            ulong hash = HashFileName(hashablePart);
-            hash = hash + ((ulong) typeId << 52);
+            ulong hash = HashFileName(hashablePart) & 0x3FFFFFFFFFFFF;
+            hash = hash + ((ulong)typeId << 51);
             return hash;
         }
 
-        internal static bool TryGetFileNameFromHash(ulong hash, int fileExtensionId, out string fileName)
+        internal static bool TryGetFileNameFromHash(ulong hash, out string fileName)
+        {
+            bool foundFileName = true;
+            string filePath;
+            string fileExtension;
+
+            ulong extensionHash = hash >> 51;
+            ulong pathHash = hash & 0x3FFFFFFFFFFFF;
+
+            fileName = "";
+            if (!HashNameDictionary.TryGetValue(pathHash, out filePath))
+            {
+                filePath = hash.ToString("X");
+                foundFileName = false;
+            }
+            fileName += filePath;
+
+            if (!ExtensionsMap.TryGetValue(extensionHash, out fileExtension))
+            {
+                fileExtension = "_unknown";
+                foundFileName = false;
+            }
+            else
+            {
+                fileName += ".";
+            }
+            fileName += fileExtension;
+
+            return foundFileName;
+        }
+
+        internal static bool TryGetFileNameFromHash(ulong hash, ulong fileExtensionId, out string fileName)
         {
             string fileExtension;
-            if (!TypeExtensions.TryGetValue(fileExtensionId, out fileExtension))
+            if (!ExtensionsMap.TryGetValue(fileExtensionId, out fileExtension))
             {
-                fileExtension = ".bin";
+                fileExtension = "_unknown";
             }
             ulong hashMasked = hash & 0xFFFFFFFFFFFF;
 
@@ -181,7 +263,7 @@ namespace GzsTool.Utility
         {
             foreach (var line in File.ReadAllLines(path))
             {
-                ulong hash = HashFileName(line);
+                ulong hash = HashFileName(line) & 0x3FFFFFFFFFFFF;
                 if (HashNameDictionary.ContainsKey(hash) == false)
                 {
                     HashNameDictionary.Add(hash, line);

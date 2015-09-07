@@ -90,7 +90,7 @@ namespace GzsTool.Gzs
 
         private bool TryGetFilePath(out string filePath)
         {
-            int fileExtensionId = (int) (Hash >> 52 & 0xFFFF);
+            ulong fileExtensionId = Hash >> 50 & 0x1FFF;
             bool fileNameFound = Hashing.TryGetFileNameFromHash(Hash, fileExtensionId, out filePath);
             return fileNameFound;
         }

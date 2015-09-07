@@ -30,6 +30,7 @@ namespace GzsTool.Common
 
         public void WriteFile(string filePath, Func<Stream> fileContentStream)
         {
+            filePath = filePath.TrimStart('/', '\\');
             string outputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
             using (FileStream output = new FileStream(outputFilePath, FileMode.Create))

@@ -61,6 +61,10 @@ namespace GzsTool.Qar
             Unknown3 = reader.ReadUInt32() ^ xorMask1;
             Unknown4 = reader.ReadUInt32() ^ xorMask2;
 
+            string filePath;
+            FileNameFound = TryGetFilePath(out filePath);
+            FilePath = filePath;
+
             DataOffset = reader.BaseStream.Position;
         }
         
@@ -69,7 +73,7 @@ namespace GzsTool.Qar
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
                 DataStream = ReadDataLazy(input),
-                FileName = Hash.ToString() + ".bin" // TODO: Get from hash
+                FileName = FilePath
             };
             return fileDataStreamContainer;
         }
@@ -110,19 +114,15 @@ namespace GzsTool.Qar
                 byte[] newSectionData = new byte[Size1];
                 Array.Copy(sectionData, headerSize, newSectionData, 0, Size1);
                 Decrypt2(newSectionData, Key);
+                sectionData = newSectionData;
             }
-            string filePath;
-            FileNameFound = TryGetFilePath(out filePath);
-            FilePath = filePath;
 
             return new MemoryStream(sectionData);
         }
         
         private bool TryGetFilePath(out string filePath)
         {
-            int fileExtensionId = (int)(Hash >> 52 & 0xFFFF);
-            bool fileNameFound = Hashing.TryGetFileNameFromHash(Hash, fileExtensionId, out filePath);
-            return fileNameFound;
+            return Hashing.TryGetFileNameFromHash(Hash, out filePath);
         }
         
         private void Decrypt1(byte[] sectionData, uint hashLow)
