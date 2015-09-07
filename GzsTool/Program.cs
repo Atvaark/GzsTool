@@ -7,7 +7,6 @@ using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Common.Interfaces;
 using GzsTool.Fpk;
-using GzsTool.Gzs;
 using GzsTool.Pftxs;
 using GzsTool.Qar;
 using GzsTool.Utility;
@@ -17,7 +16,7 @@ namespace GzsTool
     public static class Program
     {
         private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
-            new[] {typeof (FpkFile), typeof (GzsFile), typeof (PftxsFile), typeof(QarFile)});
+            new[] {typeof (FpkFile), typeof (PftxsFile), typeof(QarFile)});
 
         private static void Main(string[] args)
         {
@@ -27,11 +26,6 @@ namespace GzsTool
                 string path = args[0];
                 if (File.Exists(path))
                 {
-                    if (path.EndsWith(".g0s", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        ReadGzsArchive(path);
-                        return;
-                    }
                     if (path.EndsWith(".dat", StringComparison.CurrentCultureIgnoreCase))
                     {
                         ReadQarFile(path);
@@ -66,7 +60,7 @@ namespace GzsTool
         public static void ReadDictionaries()
         {
             string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            const string gzsDictionaryName = "gzs_dictionary.txt";
+            const string gzsDictionaryName = "qar_dictionary.txt";
             const string fpkDictionaryName = "fpk_dictionary.txt";
             // TODO: Enable reading the ps3 file when there is actually a need for it.
             ////Hashing.ReadPs3PathIdFile(Path.Combine(executingAssemblyLocation, "pathid_list_ps3.bin"));
@@ -93,44 +87,20 @@ namespace GzsTool
         private static void ShowUsageInfo()
         {
             Console.WriteLine("GzsTool by Atvaark\n" +
-                              "  A tool for unpacking and repacking g0s, fpk, fpkd and pftxs files\n" +
+                              "  A tool for unpacking and repacking qar, fpk, fpkd and pftxs files\n" +
                               "Usage:\n" +
                               "  GzsTool file_path|folder_path\n" +
                               "Examples:\n" +
-                              "  GzsTool file_path.g0s      - Unpacks the g0s file\n" +
+                              "  GzsTool file_path.dat      - Unpacks the qar file\n" +
                               "  GzsTool file_path.fpk      - Unpacks the fpk file\n" +
                               "  GzsTool file_path.fpkd     - Unpacks the fpkd file\n" +
                               "  GzsTool file_path.pftxs    - Unpacks the pftxs file\n" +
                               "  GzsTool folder_path        - Unpacks all fpk and fpkd files in the folder\n" +
-                              "  GzsTool file_path.g0s.xml  - Repacks the g0s file\n" +
+                              "  GzsTool file_path.dat.xml  - Repacks the qar file\n" +
                               "  GzsTool file_path.fpk.xml  - Repacks the fpk file\n" +
                               "  GzsTool file_path.fpkd.xml - Repacks the fpkd file\n" +
                               "  GzsTool file_path.pftxs.xml- Repacks the pftxs file");
         }
-
-        private static void ReadGzsArchive(string path)
-        {
-            string fileDirectory = Path.GetDirectoryName(path);
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-            string outputDirectoryPath = Path.Combine(fileDirectory, fileNameWithoutExtension);
-            string xmlOutputPath = Path.Combine(fileDirectory,
-                string.Format("{0}.xml", Path.GetFileName(path)));
-            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
-
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
-            {
-                GzsFile gzsFile = GzsFile.ReadGzsFile(input);
-                gzsFile.Name = Path.GetFileName(path);
-                foreach (var exportedFile in gzsFile.ExportFiles(input))
-                {
-                    Console.WriteLine(exportedFile.FileName);
-                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
-                }
-                ArchiveSerializer.Serialize(xmlOutput, gzsFile);
-            }
-        }
-
 
         private static void ReadQarFile(string path)
         {
@@ -153,7 +123,6 @@ namespace GzsTool
                 }
                 ArchiveSerializer.Serialize(xmlOutput, qarFile);
             }
-
         }
 
         private static void ReadFpkArchives(string path)
@@ -216,18 +185,17 @@ namespace GzsTool
                 ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
             }
         }
-
-
+        
         private static void WriteArchive(string path)
         {
             var directory = Path.GetDirectoryName(path);
             using (FileStream xmlInput = new FileStream(path, FileMode.Open))
             {
                 object file = ArchiveSerializer.Deserialize(xmlInput);
-                GzsFile gzsFile = file as GzsFile;
-                if (gzsFile != null)
+                QarFile qarFile = file as QarFile;
+                if (qarFile != null)
                 {
-                    WriteGzsArchive(gzsFile, directory);
+                    WriteQarArchive(qarFile, directory);
                 }
                 FpkFile fpkFile = file as FpkFile;
                 if (fpkFile != null)
@@ -242,17 +210,17 @@ namespace GzsTool
             }
         }
 
-        private static void WriteGzsArchive(GzsFile gzsFile, string workingDirectory)
+        private static void WriteQarArchive(QarFile qarFile, string workingDirectory)
         {
-            string outputPath = Path.Combine(workingDirectory, gzsFile.Name);
+            string outputPath = Path.Combine(workingDirectory, qarFile.Name);
             string fileSystemInputDirectory = Path.Combine(workingDirectory,
-                Path.GetFileNameWithoutExtension(gzsFile.Name));
+                Path.GetFileNameWithoutExtension(qarFile.Name));
             IDirectory inputDirectory = new FileSystemDirectory(fileSystemInputDirectory);
 
 
             using (FileStream output = new FileStream(outputPath, FileMode.Create))
             {
-                gzsFile.Write(output, inputDirectory);
+                qarFile.Write(output, inputDirectory);
             }
         }
 

@@ -33,6 +33,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="CityHash">
@@ -64,14 +65,10 @@
     <Compile Include="Qar\QarEntry.cs" />
     <Compile Include="Qar\QarFile.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
-    <Compile Include="Utility\Encryption.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />
     <Compile Include="Fpk\FpkReference.cs" />
     <Compile Include="Fpk\FpkString.cs" />
-    <Compile Include="Gzs\GzsEntry.cs" />
-    <Compile Include="Gzs\GzsArchiveFooter.cs" />
-    <Compile Include="Gzs\GzsFile.cs" />
     <Compile Include="Utility\Hashing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
