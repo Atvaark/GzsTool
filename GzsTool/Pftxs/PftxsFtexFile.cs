@@ -7,7 +7,7 @@ using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Pftxs
 {
-    [XmlType("Entry")]
+    [XmlType("Entry", Namespace = "Pftxs")]
     public class PftxsFtexFile
     {
         public const int HeaderSize = 32;

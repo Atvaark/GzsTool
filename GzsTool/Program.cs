@@ -15,8 +15,9 @@ namespace GzsTool
 {
     public static class Program
     {
-        private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(typeof (ArchiveFile),
-            new[] {typeof (FpkFile), typeof (PftxsFile), typeof(QarFile)});
+        private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(
+            typeof(ArchiveFile),
+            new[] { typeof(FpkFile), typeof(PftxsFile), typeof(QarFile) });
 
         private static void Main(string[] args)
         {
@@ -56,7 +57,7 @@ namespace GzsTool
             }
             ShowUsageInfo();
         }
-        
+
         public static void ReadDictionaries()
         {
             string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -185,7 +186,7 @@ namespace GzsTool
                 ArchiveSerializer.Serialize(xmlOutput, pftxsFile);
             }
         }
-        
+
         private static void WriteArchive(string path)
         {
             var directory = Path.GetDirectoryName(path);

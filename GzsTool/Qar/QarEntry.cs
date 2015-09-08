@@ -1,9 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
+using GzsTool.Common.Interfaces;
 using GzsTool.Utility;
 
 namespace GzsTool.Qar
@@ -33,17 +35,8 @@ namespace GzsTool.Qar
         public uint Unknown1 { get; private set; }
 
         [XmlIgnore]
-        public uint Unknown2 { get; private set; }
-
-        [XmlIgnore]
-        public uint Unknown3 { get; private set; }
-
-        [XmlIgnore]
-        public uint Unknown4 { get; private set; }
-
-        [XmlIgnore]
         public long DataOffset { get; set; }
-
+        
         public void Read(BinaryReader reader)
         {
             const uint xorMask1 = 0x41441043;
@@ -56,10 +49,11 @@ namespace GzsTool.Qar
             Hash = (ulong)hashHigh << 32 | hashLow;
             Size1 = reader.ReadUInt32() ^ xorMask2;
             Size2 = reader.ReadUInt32() ^ xorMask3;
-            Unknown1 = reader.ReadUInt32() ^ xorMask4;
-            Unknown2 = reader.ReadUInt32() ^ xorMask1;
-            Unknown3 = reader.ReadUInt32() ^ xorMask1;
-            Unknown4 = reader.ReadUInt32() ^ xorMask2;
+
+            uint md51 = reader.ReadUInt32() ^ xorMask4;
+            uint md52 = reader.ReadUInt32() ^ xorMask1;
+            uint md53 = reader.ReadUInt32() ^ xorMask1;
+            uint md54 = reader.ReadUInt32() ^ xorMask2;
 
             string filePath;
             FileNameFound = TryGetFilePath(out filePath);
@@ -227,6 +221,42 @@ namespace GzsTool.Qar
             }
 
             Buffer.BlockCopy(output, 0, input, 0, input.Length);
+        }
+
+
+        private string GetQarEntryFilePath()
+        {
+            string filePath = FilePath;
+            if (filePath.StartsWith("/"))
+                filePath = filePath.Substring(1, filePath.Length - 1);
+            filePath = filePath.Replace("/", "\\");
+            return filePath;
+        }
+
+        public void Write(Stream output, IDirectory inputDirectory)
+        {
+            const ulong xorMask1Long = 0x4144104341441043;
+            const uint xorMask1 = 0x41441043;
+            const uint xorMask2 = 0x11C22050;
+            const uint xorMask3 = 0xD05608C3;
+            const uint xorMask4 = 0x532C7319;
+            
+            byte[] data = inputDirectory.ReadFile(GetQarEntryFilePath());
+            byte[] hash = Hashing.Md5Hash(data);
+            Decrypt1(data, hashLow: (uint)(Hash & 0xFFFFFFFF));
+            
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            writer.Write(Hash ^ xorMask1Long);
+            writer.Write(data.Length ^ xorMask2);
+            writer.Write(data.Length ^ xorMask3);
+            
+            writer.Write(BitConverter.ToUInt32(hash, 0) ^ xorMask4);
+            writer.Write(BitConverter.ToUInt32(hash, 4) ^ xorMask1);
+            writer.Write(BitConverter.ToUInt32(hash, 8) ^ xorMask1);
+            writer.Write(BitConverter.ToUInt32(hash, 12) ^ xorMask2);
+
+            // TODO: Encrypt lua data
+            writer.Write(data);
         }
     }
 }

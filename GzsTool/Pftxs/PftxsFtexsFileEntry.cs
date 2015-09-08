@@ -6,6 +6,7 @@ using GzsTool.Common.Interfaces;
 
 namespace GzsTool.Pftxs
 {
+    [XmlType("EntryData", Namespace = "Pftxs")]
     public class PftxsFtexsFileEntry
     {
         [XmlAttribute("Hash")]
