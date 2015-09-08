@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
@@ -30,10 +29,7 @@ namespace GzsTool.Qar
 
         [XmlIgnore]
         public uint Size2 { get; private set; }
-
-        [XmlIgnore]
-        public uint Unknown1 { get; private set; }
-
+        
         [XmlIgnore]
         public long DataOffset { get; set; }
         
@@ -244,18 +240,17 @@ namespace GzsTool.Qar
             byte[] data = inputDirectory.ReadFile(GetQarEntryFilePath());
             byte[] hash = Hashing.Md5Hash(data);
             Decrypt1(data, hashLow: (uint)(Hash & 0xFFFFFFFF));
-            
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
-            writer.Write(data.Length ^ xorMask2);
-            writer.Write(data.Length ^ xorMask3);
+            writer.Write((uint)data.Length ^ xorMask2);
+            writer.Write((uint)data.Length ^ xorMask3);
             
             writer.Write(BitConverter.ToUInt32(hash, 0) ^ xorMask4);
             writer.Write(BitConverter.ToUInt32(hash, 4) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(hash, 8) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(hash, 12) ^ xorMask2);
 
-            // TODO: Encrypt lua data
+            // TODO: Maybe reencrypt the lua files.
             writer.Write(data);
         }
     }
