@@ -39,6 +39,9 @@
     <Reference Include="CityHash">
       <HintPath>..\packages\CityHash.Net.Legacy.0.1.1\lib\net45\CityHash.dll</HintPath>
     </Reference>
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\packages\SharpZipLib.0.86.0\lib\20\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -69,6 +72,7 @@
     <Compile Include="Fpk\FpkFile.cs" />
     <Compile Include="Fpk\FpkReference.cs" />
     <Compile Include="Fpk\FpkString.cs" />
+    <Compile Include="Utility\Compression.cs" />
     <Compile Include="Utility\Hashing.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

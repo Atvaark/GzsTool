@@ -1,7 +1,9 @@
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Common.Interfaces;
@@ -21,14 +23,17 @@ namespace GzsTool.Qar
         [XmlAttribute("FilePath")]
         public string FilePath { get; set; }
 
+        [XmlAttribute("Compressed")]
+        public bool Compressed { get; set; }
+
         [XmlIgnore]
         public bool FileNameFound { get; set; }
 
         [XmlIgnore]
-        public uint Size1 { get; private set; }
+        public uint UncompressedSize { get; private set; }
 
         [XmlIgnore]
-        public uint Size2 { get; private set; }
+        public uint CompressedSize { get; private set; }
         
         [XmlIgnore]
         public long DataOffset { get; set; }
@@ -43,8 +48,10 @@ namespace GzsTool.Qar
             uint hashLow = reader.ReadUInt32() ^ xorMask1;
             uint hashHigh = reader.ReadUInt32() ^ xorMask1;
             Hash = (ulong)hashHigh << 32 | hashLow;
-            Size1 = reader.ReadUInt32() ^ xorMask2;
-            Size2 = reader.ReadUInt32() ^ xorMask3;
+            UncompressedSize = reader.ReadUInt32() ^ xorMask2;
+            CompressedSize = reader.ReadUInt32() ^ xorMask3;
+
+            Compressed = UncompressedSize != CompressedSize;
 
             uint md51 = reader.ReadUInt32() ^ xorMask4;
             uint md52 = reader.ReadUInt32() ^ xorMask1;
@@ -57,7 +64,8 @@ namespace GzsTool.Qar
 
             DataOffset = reader.BaseStream.Position;
         }
-        
+
+
         public FileDataStreamContainer Export(Stream input)
         {
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
@@ -84,27 +92,32 @@ namespace GzsTool.Qar
             input.Position = DataOffset;
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
 
-            byte[] sectionData = reader.ReadBytes((int)Size1);
+            byte[] sectionData = reader.ReadBytes((int)UncompressedSize);
             Decrypt1(sectionData, hashLow: (uint) (Hash & 0xFFFFFFFF));
             uint magicEntry = BitConverter.ToUInt32(sectionData, 0);
             if (magicEntry == 0xA0F8EFE6)
             {
                 const int headerSize = 8;
                 Key = BitConverter.ToUInt32(sectionData, 4);
-                Size1 -= headerSize;
-                byte[] newSectionData = new byte[Size1];
-                Array.Copy(sectionData, headerSize, newSectionData, 0, Size1);
+                UncompressedSize -= headerSize;
+                byte[] newSectionData = new byte[UncompressedSize];
+                Array.Copy(sectionData, headerSize, newSectionData, 0, UncompressedSize);
                 Decrypt2(newSectionData, Key);
             }
             else if (magicEntry == 0xE3F8EFE6)
             {
                 const int headerSize = 16;
                 Key = BitConverter.ToUInt32(sectionData, 4);
-                Size1 -= headerSize;
-                byte[] newSectionData = new byte[Size1];
-                Array.Copy(sectionData, headerSize, newSectionData, 0, Size1);
+                UncompressedSize -= headerSize;
+                byte[] newSectionData = new byte[UncompressedSize];
+                Array.Copy(sectionData, headerSize, newSectionData, 0, UncompressedSize);
                 Decrypt2(newSectionData, Key);
                 sectionData = newSectionData;
+            }
+
+            if (Compressed)
+            {
+                sectionData = Compression.Inflate(sectionData);
             }
 
             return new MemoryStream(sectionData);
@@ -238,12 +251,24 @@ namespace GzsTool.Qar
             const uint xorMask4 = 0x532C7319;
             
             byte[] data = inputDirectory.ReadFile(GetQarEntryFilePath());
+            uint uncompressedSize = (uint) data.Length;
+            uint compressedSize;
+            if (Compressed)
+            {
+                data = Compression.Deflate(data);
+                compressedSize = (uint) data.Length;
+            }
+            else
+            {
+                compressedSize = uncompressedSize;
+            }
+
             byte[] hash = Hashing.Md5Hash(data);
             Decrypt1(data, hashLow: (uint)(Hash & 0xFFFFFFFF));
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
-            writer.Write((uint)data.Length ^ xorMask2);
-            writer.Write((uint)data.Length ^ xorMask3);
+            writer.Write(compressedSize ^ xorMask2);
+            writer.Write(uncompressedSize ^ xorMask3);
             
             writer.Write(BitConverter.ToUInt32(hash, 0) ^ xorMask4);
             writer.Write(BitConverter.ToUInt32(hash, 4) ^ xorMask1);

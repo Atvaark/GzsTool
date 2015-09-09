@@ -205,7 +205,7 @@ namespace GzsTool.Utility
                 hashablePart = filePath.Substring(0, extensionIndex);
             }
             ulong hash = HashFileName(hashablePart) & 0x3FFFFFFFFFFFF;
-            hash = hash + ((ulong)typeId << 51);
+            hash = hash + (typeId << 51);
             return hash;
         }
 
