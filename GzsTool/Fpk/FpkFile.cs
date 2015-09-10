@@ -42,8 +42,8 @@ namespace GzsTool.Fpk
             uint magicNumber1 = reader.ReadUInt32(); // foxf
             ushort magicNumber2 = reader.ReadUInt16(); // pk
             FpkType = (FpkType) reader.ReadByte(); // ' ' or 'd'
-            byte magicNumber3 = reader.ReadByte(); // s
-            ushort magicNumber4 = reader.ReadUInt16(); // te
+            byte magicNumber3 = reader.ReadByte(); // w
+            ushort magicNumber4 = reader.ReadUInt16(); // in
             uint fileSize = reader.ReadUInt32();
             reader.Skip(18);
             uint magicNumber5 = reader.ReadUInt32(); // 2
@@ -100,8 +100,8 @@ namespace GzsTool.Fpk
             writer.Write(0x66786f66); // foxf
             writer.Write((ushort) 0x6B70); //pk
             writer.Write((byte) FpkType);
-            writer.Write((byte) 0x73); // s
-            writer.Write((ushort) 0x6574); // te
+            writer.Write((byte) 0x77); // w
+            writer.Write((ushort) 0x6E69); // in
             writer.Write(fileSize);
             writer.WriteZeros(18);
             writer.Write(0x00000002);
