@@ -9,8 +9,13 @@ namespace GzsTool.Pftxs
     [XmlType("EntryData", Namespace = "Pftxs")]
     public class PftxsFtexsFileEntry
     {
+        public const int HeaderSize = 16;
+
         [XmlAttribute("Hash")]
         public ulong Hash { get; set; }
+
+        [XmlAttribute("FilePath")]
+        public string FilePath { get; set; }
 
         [XmlIgnore]
         public int Offset { get; set; }
@@ -21,6 +26,7 @@ namespace GzsTool.Pftxs
         [XmlIgnore]
         public byte[] Data { get; set; }
 
+
         public void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
@@ -28,10 +34,12 @@ namespace GzsTool.Pftxs
             Offset = reader.ReadInt32();
             Size = reader.ReadInt32();
         }
-
-        public void Write(Stream output, IDirectory inputDirectory)
+        
+        public void Write(BinaryWriter writer)
         {
-            throw new NotImplementedException();
+            writer.Write(Hash);
+            writer.Write(Offset);
+            writer.Write(Size);
         }
     }
 }

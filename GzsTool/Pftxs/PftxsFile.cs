@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
@@ -12,6 +11,9 @@ namespace GzsTool.Pftxs
     [XmlType("PftxsFile")]
     public class PftxsFile : ArchiveFile
     {
+        private const long FtexHeaderSize = 16;
+        private const long TexlHeaderSize = 16;
+
         public PftxsFile()
         {
             Files = new List<PftxsFtexFile>();
@@ -61,17 +63,13 @@ namespace GzsTool.Pftxs
         {
             foreach (var file in Files)
             {
-                // TODO: Lookup name of the file.
-                string name = file.Hash.ToString();
-                foreach (var entry in file.Entries.Select((value, i) => new { e = value, i }))
+                foreach (var entry in file.Entries)
                 {
-                    string extension = entry.i == 0
-                        ? ".ftex"
-                        : "." + entry.i + ".ftexs";
+                    var localEntry = entry;
                     yield return new FileDataStreamContainer
                     {
-                        DataStream = () => new MemoryStream(entry.e.Data),
-                        FileName = name + extension
+                        DataStream = () => new MemoryStream(localEntry.Data),
+                        FileName = entry.FilePath
                     };
                 }
             }
@@ -79,7 +77,29 @@ namespace GzsTool.Pftxs
 
         public override void Write(Stream output, IDirectory inputDirectory)
         {
-            throw new NotImplementedException();
+            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
+            long ftexHeaderPosition = output.Position;
+            output.Position += FtexHeaderSize;
+            long texlHeaderPosition = output.Position;
+            output.Position += TexlHeaderSize;
+            foreach (var file in Files)
+            {
+                file.WriteData(writer, inputDirectory);
+            }
+
+            long endPosition = output.Position;
+            output.Position = ftexHeaderPosition;
+            writer.Write(0x58544650); // PFTX
+            writer.Write(0x40000000);
+            writer.Write(0x00000010);
+            writer.Write(0x00000001);
+
+            output.Position = texlHeaderPosition;
+            writer.Write(0x4C584554); // TEXL
+            writer.Write(Convert.ToUInt32(endPosition - texlHeaderPosition)); // Size
+            writer.Write(Convert.ToUInt32(Files.Count));
+            
+            output.Position = endPosition;
         }
     }
 }
