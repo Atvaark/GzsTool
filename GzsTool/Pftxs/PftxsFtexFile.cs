@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common.Interfaces;
+using GzsTool.Utility;
 
 namespace GzsTool.Pftxs
 {
@@ -46,11 +47,9 @@ namespace GzsTool.Pftxs
                 PftxsFtexsFileEntry entry = new PftxsFtexsFileEntry();
                 entry.Read(input);
 
-                string extension = i == 0 ? ".ftex" : "." + i + ".ftexs";
-                // TODO: Lookup name of the file.
-                string name = entry.Hash.ToString("X");
-                entry.FilePath = name + extension;
-
+                string name;
+                Hashing.TryGetFileNameFromHash(entry.Hash, out name);
+                entry.FilePath = name;
                 Entries.Add(entry);
             }
             

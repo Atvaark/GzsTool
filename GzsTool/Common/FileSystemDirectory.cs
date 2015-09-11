@@ -19,6 +19,7 @@ namespace GzsTool.Common
 
         public byte[] ReadFile(string filePath)
         {
+            filePath = filePath.TrimStart('/', '\\');
             string inputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
             {
