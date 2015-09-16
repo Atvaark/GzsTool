@@ -125,7 +125,9 @@ namespace GzsTool.Qar
         
         private bool TryGetFilePath(out string filePath)
         {
-            return Hashing.TryGetFileNameFromHash(Hash, out filePath);
+            bool filePathFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
+            filePath = Hashing.NormalizeFilePath(filePath);
+            return filePathFound;
         }
         
         private void Decrypt1(byte[] sectionData, uint hashLow)
@@ -231,17 +233,7 @@ namespace GzsTool.Qar
 
             Buffer.BlockCopy(output, 0, input, 0, input.Length);
         }
-
-
-        private string GetQarEntryFilePath()
-        {
-            string filePath = FilePath;
-            if (filePath.StartsWith("/"))
-                filePath = filePath.Substring(1, filePath.Length - 1);
-            filePath = filePath.Replace("/", "\\");
-            return filePath;
-        }
-
+        
         public void Write(Stream output, IDirectory inputDirectory)
         {
             const ulong xorMask1Long = 0x4144104341441043;
@@ -249,8 +241,8 @@ namespace GzsTool.Qar
             const uint xorMask2 = 0x11C22050;
             const uint xorMask3 = 0xD05608C3;
             const uint xorMask4 = 0x532C7319;
-            
-            byte[] data = inputDirectory.ReadFile(GetQarEntryFilePath());
+
+            byte[] data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(FilePath));
             uint uncompressedSize = (uint) data.Length;
             uint compressedSize;
             if (Compressed)

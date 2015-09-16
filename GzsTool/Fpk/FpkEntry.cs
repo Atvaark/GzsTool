@@ -88,14 +88,15 @@ namespace GzsTool.Fpk
 
         private string GetFpkEntryFileName()
         {
-            string fileName = FilePathFpkString.Value;
-            fileName = fileName.Replace("/", "\\");
+            string fileName = Hashing.NormalizeFilePath(FilePathFpkString.Value);
+
+            // Some files are prefixed with a drive letter (e.g. "Z:")
             int index = fileName.IndexOf(":", StringComparison.Ordinal);
             if (index != -1)
             {
                 fileName = fileName.Substring(index + 1, fileName.Length - index - 1);
             }
-            fileName = fileName.StartsWith("\\") ? fileName.Substring(1, fileName.Length - 1) : fileName;
+            
             return fileName;
         }
 

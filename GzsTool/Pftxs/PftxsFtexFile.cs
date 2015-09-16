@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common.Interfaces;
@@ -49,7 +48,7 @@ namespace GzsTool.Pftxs
 
                 string name;
                 Hashing.TryGetFileNameFromHash(entry.Hash, out name);
-                entry.FilePath = name;
+                entry.FilePath = Hashing.NormalizeFilePath(name);
                 Entries.Add(entry);
             }
             

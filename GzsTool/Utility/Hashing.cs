@@ -166,16 +166,15 @@ namespace GzsTool.Utility
             return  HashFileName(fileExtension, false) & 0x1FFF;
         }
 
-        private static ulong HashFileName(string text, bool truncate = true)
+        private static ulong HashFileName(string text, bool removeExtension = true)
         {
-            // TODO: Skip "/Assets/" ?
-            if (truncate)
+            if (removeExtension)
             {
                 int index = text.LastIndexOf('.');
                 text = index == -1 ? text : text.Substring(0, index);
-                text = text.StartsWith("/Assets/") ? text.Substring("/Assets/".Length - 1) : text;
-                text = text.TrimStart('/');
             }
+            text = text.StartsWith("/Assets/") ? text.Substring("/Assets/".Length - 1) : text;
+            text = text.TrimStart('/');
 
             const ulong seed0 = 0x9ae16a3b2f90404f;
             byte[] seed1Bytes = new byte[sizeof(ulong)];
@@ -209,6 +208,11 @@ namespace GzsTool.Utility
             return hash;
         }
 
+        internal static string NormalizeFilePath(string filePath)
+        {
+            return filePath.Replace("/", "\\").TrimStart('\\');
+        }
+
         internal static bool TryGetFileNameFromHash(ulong hash, out string fileName)
         {
             bool foundFileName = true;
@@ -221,7 +225,7 @@ namespace GzsTool.Utility
             fileName = "";
             if (!HashNameDictionary.TryGetValue(pathHash, out filePath))
             {
-                filePath = hash.ToString("X");
+                filePath = pathHash.ToString("x");
                 foundFileName = false;
             }
             fileName += filePath;

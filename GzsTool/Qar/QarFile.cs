@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
@@ -12,6 +13,8 @@ namespace GzsTool.Qar
     [XmlType("QarFile")]
     public class QarFile : ArchiveFile
     {
+        private const int QarMagicNumber = 0x52415153;
+
         [XmlAttribute("Name")]
         public string Name { get; set; }
 
@@ -21,11 +24,20 @@ namespace GzsTool.Qar
         [XmlArray("Entries")]
         public List<QarEntry> Entries { get; set; }
 
-        public static QarFile ReadQarFile(FileStream input)
+        public static QarFile ReadQarFile(Stream input)
         {
             QarFile qarFile = new QarFile();
             qarFile.Read(input);
             return qarFile;
+        }
+
+        public static bool IsQarFile(Stream input)
+        {
+            long startPosition = input.Position;
+            BinaryReader reader = new BinaryReader(input, Encoding.ASCII, true);
+            int magicNumber = reader.ReadInt32();
+            input.Position = startPosition;
+            return magicNumber == QarMagicNumber;
         }
 
         public override void Read(Stream input)
@@ -138,7 +150,7 @@ namespace GzsTool.Qar
             uint endPositionHead = (uint) (endPosition >> shift);
 
             output.Position = headerPosition;
-            const uint qarMagicNumber = 0x52415153; // SQAR
+            const uint qarMagicNumber = QarMagicNumber; // SQAR
             writer.Write(qarMagicNumber);
             writer.Write(Flags ^ xorMask1);
             writer.Write((uint)Entries.Count ^ xorMask2);
