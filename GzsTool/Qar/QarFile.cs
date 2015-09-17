@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
@@ -150,25 +149,24 @@ namespace GzsTool.Qar
             uint endPositionHead = (uint) (endPosition >> shift);
 
             output.Position = headerPosition;
-            const uint qarMagicNumber = QarMagicNumber; // SQAR
-            writer.Write(qarMagicNumber);
+            writer.Write(QarMagicNumber); // SQAR
             writer.Write(Flags ^ xorMask1);
             writer.Write((uint)Entries.Count ^ xorMask2);
             writer.Write(xorMask3); // unknown count (not saved in the xml and output directory)
-            writer.Write(endPositionHead ^ xorMask4); // unknown3
-            writer.Write((uint)dataOffset ^ xorMask1); // offset first 
+            writer.Write(endPositionHead ^ xorMask4);
+            writer.Write((uint)dataOffset ^ xorMask1);
             writer.Write(1 ^ xorMask1);
             writer.Write(0 ^ xorMask2);
 
-            // TODO: Refactor DEcrSectionList to take a byte array
-            int bufferLenth = Buffer.ByteLength(sections);
-            byte[] sectData = new byte[bufferLenth];
-            Buffer.BlockCopy(sections, 0, sectData, 0, bufferLenth);
-            ulong[] sect2 = DecryptSectionList((uint)Entries.Count, sectData);
-            byte[] sectData2 = new byte[bufferLenth];
-            Buffer.BlockCopy(sect2, 0, sectData2, 0, bufferLenth);
+            // TODO: Refactor this to a method that just takes a byte array
+            int bufferLength = Buffer.ByteLength(sections);
+            byte[] sectionsData = new byte[bufferLength];
+            Buffer.BlockCopy(sections, 0, sectionsData, 0, bufferLength);
+            ulong[] encryptedSections = DecryptSectionList((uint)Entries.Count, sectionsData);
+            byte[] encryptedSectionsData = new byte[bufferLength];
+            Buffer.BlockCopy(encryptedSections, 0, encryptedSectionsData, 0, bufferLength);
             output.Position = tableOffset;
-            writer.Write(sectData2);
+            writer.Write(encryptedSectionsData);
 
             output.Position = endPosition;
         }
