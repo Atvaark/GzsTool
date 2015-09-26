@@ -138,12 +138,12 @@ namespace GzsTool.Qar
             {
                 output.AlignWrite(alignment, 0x00);
                 QarEntry entry = Entries[i];
+                entry.CalculateHash();
                 ulong section = (ulong) (output.Position >> shift) << 40
                                 | (entry.Hash & 0xFF) << 32
                                 | entry.Hash >> 32 & 0xFFFFFFFFFF;
                 sections[i] = section;
                 entry.Write(output, inputDirectory);
-                // TODO: Align 16?
             }
             long endPosition = output.Position;
             uint endPositionHead = (uint) (endPosition >> shift);

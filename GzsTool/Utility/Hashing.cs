@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -156,25 +157,30 @@ namespace GzsTool.Utility
             "vo.evf",
             "vpc",
             "wem",
-            "xml",
+            "xml"
         };
 
         private static readonly Dictionary<ulong, string> ExtensionsMap = FileExtensions.ToDictionary(HashFileExtension);
-        
+
         private static ulong HashFileExtension(string fileExtension)
         {
-            return  HashFileName(fileExtension, false) & 0x1FFF;
+            return HashFileName(fileExtension, false) & 0x1FFF;
         }
 
         private static ulong HashFileName(string text, bool removeExtension = true)
         {
             if (removeExtension)
             {
-                int index = text.LastIndexOf('.');
+                int index = text.IndexOf('.');
                 text = index == -1 ? text : text.Substring(0, index);
             }
-            text = text.StartsWith("/Assets/") ? text.Substring("/Assets/".Length - 1) : text;
+            bool setFlag = false;
             text = text.TrimStart('/');
+            if (text.StartsWith("Assets/"))
+            {
+                text = text.Substring("Assets/".Length);
+                setFlag = true;
+            }
 
             const ulong seed0 = 0x9ae16a3b2f90404f;
             byte[] seed1Bytes = new byte[sizeof(ulong)];
@@ -183,11 +189,13 @@ namespace GzsTool.Utility
                 seed1Bytes[j] = Convert.ToByte(text[i]);
             }
             ulong seed1 = BitConverter.ToUInt64(seed1Bytes, 0);
-            return CityHash.CityHash.CityHash64WithSeeds(text, seed0, seed1);
+            ulong maskedHash = CityHash.CityHash.CityHash64WithSeeds(text, seed0, seed1) & 0x3FFFFFFFFFFFF;
+            return setFlag ? maskedHash | 0x4000000000000 : maskedHash;
         }
 
         public static ulong HashFileNameWithExtension(string filePath)
         {
+            filePath = DenormalizeFilePath(filePath);
             var lookupableExtensions = ExtensionsMap
                 .Where(e => e.Value != "" && filePath.EndsWith(e.Value, StringComparison.InvariantCultureIgnoreCase))
                 .ToList();
@@ -199,18 +207,24 @@ namespace GzsTool.Utility
                 var lookupableExtension = lookupableExtensions.Single();
                 typeId = lookupableExtension.Key;
 
-                int extensionIndex = filePath.LastIndexOf(lookupableExtension.Value,
+                int extensionIndex = hashablePart.LastIndexOf(
+                    "." + lookupableExtension.Value,
                     StringComparison.InvariantCultureIgnoreCase);
-                hashablePart = filePath.Substring(0, extensionIndex);
+                hashablePart = hashablePart.Substring(0, extensionIndex);
             }
-            ulong hash = HashFileName(hashablePart) & 0x3FFFFFFFFFFFF;
-            hash = hash + (typeId << 51);
+            ulong hash = HashFileName(hashablePart);
+            hash = (typeId << 51) | hash;
             return hash;
         }
 
         internal static string NormalizeFilePath(string filePath)
         {
             return filePath.Replace("/", "\\").TrimStart('\\');
+        }
+
+        private static string DenormalizeFilePath(string filePath)
+        {
+            return filePath.Replace("\\", "/");
         }
 
         internal static bool TryGetFileNameFromHash(ulong hash, out string fileName)
@@ -226,8 +240,9 @@ namespace GzsTool.Utility
             if (!HashNameDictionary.TryGetValue(pathHash, out filePath))
             {
                 filePath = pathHash.ToString("x");
-                foundFileName = false;
+                foundFileName = false; 
             }
+
             fileName += filePath;
 
             if (!ExtensionsMap.TryGetValue(extensionHash, out fileExtension))
@@ -240,27 +255,24 @@ namespace GzsTool.Utility
                 fileName += ".";
             }
             fileName += fileExtension;
+            
+            DebugCompareHash(foundFileName, hash, fileName);
 
             return foundFileName;
         }
 
-        internal static bool TryGetFileNameFromHash(ulong hash, ulong fileExtensionId, out string fileName)
+        // TODO: Remove after testing that the hashing works correctly
+        [Conditional("DEBUG")]
+        private static void DebugCompareHash(bool foundFileName, ulong hash, string fileName)
         {
-            string fileExtension;
-            if (!ExtensionsMap.TryGetValue(fileExtensionId, out fileExtension))
+            if (foundFileName)
             {
-                fileExtension = "_unknown";
+                ulong hashTest = Hashing.HashFileNameWithExtension(fileName);
+                if (hash != hashTest)
+                {
+                    Debug.WriteLine("{0};{1:x};{2:x};{3:x}", fileName, hash, hashTest, (hashTest - hash));
+                }
             }
-            ulong hashMasked = hash & 0xFFFFFFFFFFFF;
-
-            bool fileNameFound = HashNameDictionary.TryGetValue(hashMasked, out fileName);
-            if (fileNameFound == false)
-            {
-                fileName = String.Format("{0:x}", hashMasked);
-            }
-
-            fileName = String.Format("{0}{1}", fileName, fileExtension);
-            return fileNameFound;
         }
 
         public static void ReadDictionary(string path)

@@ -1,9 +1,8 @@
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Common.Interfaces;
@@ -37,14 +36,44 @@ namespace GzsTool.Qar
         
         [XmlIgnore]
         public long DataOffset { get; set; }
-        
+
+        // TODO: Enable when the hashing is fixed
+        ////public bool ShouldSerializeHash()
+        ////{
+        ////    return FileNameFound == false;
+        ////}
+
+        public bool ShouldSerializeKey()
+        {
+            return Key != 0;
+        }
+
+        public void CalculateHash()
+        {
+            if (Hash == 0)
+            {
+                Hash = Hashing.HashFileNameWithExtension(FilePath);
+            }
+            else
+            {
+                DebugAssertHashMatches();
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private void DebugAssertHashMatches()
+        {
+            ulong newHash = Hashing.HashFileNameWithExtension(FilePath);
+            Debug.Assert(Hash == newHash);
+        }
+
         public void Read(BinaryReader reader)
         {
             const uint xorMask1 = 0x41441043;
             const uint xorMask2 = 0x11C22050;
             const uint xorMask3 = 0xD05608C3;
             const uint xorMask4 = 0x532C7319;
-
+                
             uint hashLow = reader.ReadUInt32() ^ xorMask1;
             uint hashHigh = reader.ReadUInt32() ^ xorMask1;
             Hash = (ulong)hashHigh << 32 | hashLow;
@@ -64,8 +93,7 @@ namespace GzsTool.Qar
 
             DataOffset = reader.BaseStream.Position;
         }
-
-
+        
         public FileDataStreamContainer Export(Stream input)
         {
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
@@ -233,7 +261,7 @@ namespace GzsTool.Qar
 
             Buffer.BlockCopy(output, 0, input, 0, input.Length);
         }
-        
+
         public void Write(Stream output, IDirectory inputDirectory)
         {
             const ulong xorMask1Long = 0x4144104341441043;
