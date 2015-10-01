@@ -136,7 +136,6 @@ namespace GzsTool.Qar
             ulong[] sections = new ulong[Entries.Count];
             for (int i = 0; i < Entries.Count; i++)
             {
-                output.AlignWrite(alignment, 0x00);
                 QarEntry entry = Entries[i];
                 entry.CalculateHash();
                 ulong section = (ulong) (output.Position >> shift) << 40
@@ -144,6 +143,7 @@ namespace GzsTool.Qar
                                 | entry.Hash >> 32 & 0xFFFFFFFFFF;
                 sections[i] = section;
                 entry.Write(output, inputDirectory);
+                output.AlignWrite(alignment, 0x00);
             }
             long endPosition = output.Position;
             uint endPositionHead = (uint) (endPosition >> shift);
