@@ -83,6 +83,14 @@ namespace GzsTool.Fpk
             input.Position = DataOffset;
             byte[] result = new byte[DataSize];
             input.Read(result, 0, DataSize);
+            byte[] decryptedResult;
+            if (DataSize > 0
+                && (result[0] == 0x1B || result[0] == 0x1C)
+                && TryDecryptData(result, out decryptedResult))
+            {
+                result = decryptedResult;
+            }
+
             return new MemoryStream(result);
         }
 
@@ -96,7 +104,7 @@ namespace GzsTool.Fpk
             {
                 fileName = fileName.Substring(index + 1, fileName.Length - index - 1);
             }
-            
+
             return fileName;
         }
 
@@ -120,7 +128,7 @@ namespace GzsTool.Fpk
 
         public void WriteData(Stream output, IDirectory inputDirectory)
         {
-            DataOffset = (uint) output.Position;
+            DataOffset = (uint)output.Position;
             byte[] data = inputDirectory.ReadFile(GetFpkEntryFileName());
             DataSize = data.Length;
             output.Write(data, 0, data.Length);
@@ -134,6 +142,28 @@ namespace GzsTool.Fpk
                 FileName = GetFpkEntryFileName()
             };
             return fileDataStreamContainer;
+        }
+
+        private bool TryDecryptData(byte[] data, out byte[] result)
+        {
+            result = new byte[data.Length - 1];
+            var filename = Path.GetFileName(GetFpkEntryFileName().ToLower());
+            var hash = Hashing.HashFileNameLegacy(filename, false);
+            var key = BitConverter.GetBytes(~hash);
+
+            for (int i = 0; i < data.Length - 1; i++)
+            {
+                key[i % sizeof(ulong)] ^= data[i + 1];
+                result[i] = key[i % sizeof(ulong)];
+            }
+
+            if (result[result.Length - 1] != 0x00)
+            {
+                return false;
+            }
+
+            Array.Resize(ref result, result.Length - 1);
+            return true;
         }
     }
 }
