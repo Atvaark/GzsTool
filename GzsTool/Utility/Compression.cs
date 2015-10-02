@@ -1,4 +1,5 @@
-﻿using Ionic.Zlib;
+﻿using System.IO;
+using Ionic.Zlib;
 
 namespace GzsTool.Utility
 {
@@ -11,7 +12,11 @@ namespace GzsTool.Utility
 
         internal static byte[] Deflate(byte[] buffer)
         {
-            return ZlibStream.CompressBuffer(buffer);
+            using (Stream input = new MemoryStream(buffer))
+            using (Stream zlibInput = new ZlibStream(input, CompressionMode.Compress, CompressionLevel.Default))
+            {
+                return zlibInput.ToArray();
+            }
         }
     }
 }
