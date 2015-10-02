@@ -271,7 +271,8 @@ namespace GzsTool.Qar
             const uint xorMask4 = 0x532C7319;
 
             byte[] data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(FilePath));
-            uint uncompressedSize = (uint) data.Length;
+            byte[] hash = Hashing.Md5Hash(data);
+            uint uncompressedSize = (uint)data.Length;
             uint compressedSize;
             if (Compressed)
             {
@@ -283,13 +284,12 @@ namespace GzsTool.Qar
                 compressedSize = uncompressedSize;
             }
 
-            byte[] hash = Hashing.Md5Hash(data);
             Decrypt1(data, hashLow: (uint)(Hash & 0xFFFFFFFF));
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
             writer.Write(compressedSize ^ xorMask2);
             writer.Write(uncompressedSize ^ xorMask3);
-            
+
             writer.Write(BitConverter.ToUInt32(hash, 0) ^ xorMask4);
             writer.Write(BitConverter.ToUInt32(hash, 4) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(hash, 8) ^ xorMask1);
