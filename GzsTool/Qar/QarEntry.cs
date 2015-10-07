@@ -37,11 +37,10 @@ namespace GzsTool.Qar
         [XmlIgnore]
         public long DataOffset { get; set; }
 
-        // TODO: Enable when the hashing is fixed
-        ////public bool ShouldSerializeHash()
-        ////{
-        ////    return FileNameFound == false;
-        ////}
+        public bool ShouldSerializeHash()
+        {
+            return FileNameFound == false;
+        }
 
         public bool ShouldSerializeKey()
         {
@@ -90,7 +89,6 @@ namespace GzsTool.Qar
             string filePath;
             FileNameFound = TryGetFilePath(out filePath);
             FilePath = filePath;
-
             DataOffset = reader.BaseStream.Position;
         }
         

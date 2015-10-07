@@ -167,19 +167,19 @@ namespace GzsTool.Utility
             return HashFileName(fileExtension, false) & 0x1FFF;
         }
 
-        private static ulong HashFileName(string text, bool removeExtension = true)
+        public static ulong HashFileName(string text, bool removeExtension = true)
         {
             if (removeExtension)
             {
                 int index = text.IndexOf('.');
                 text = index == -1 ? text : text.Substring(0, index);
             }
-            bool setFlag = false;
+            bool assetFlag = false;
             text = text.TrimStart('/');
             if (text.StartsWith("Assets/"))
             {
                 text = text.Substring("Assets/".Length);
-                setFlag = true;
+                assetFlag = true;
             }
 
             const ulong seed0 = 0x9ae16a3b2f90404f;
@@ -190,7 +190,7 @@ namespace GzsTool.Utility
             }
             ulong seed1 = BitConverter.ToUInt64(seed1Bytes, 0);
             ulong maskedHash = CityHash.CityHash.CityHash64WithSeeds(text, seed0, seed1) & 0x3FFFFFFFFFFFF;
-            return setFlag ? maskedHash | 0x4000000000000 : maskedHash;
+            return assetFlag ? maskedHash : maskedHash | 0x4000000000000;
         }
         
         public static ulong HashFileNameLegacy(string text, bool removeExtension = true)
@@ -209,21 +209,26 @@ namespace GzsTool.Utility
         public static ulong HashFileNameWithExtension(string filePath)
         {
             filePath = DenormalizeFilePath(filePath);
-            var lookupableExtensions = ExtensionsMap
-                .Where(e => e.Value != "" && filePath.EndsWith(e.Value, StringComparison.InvariantCultureIgnoreCase))
-                .ToList();
-
-            string hashablePart = filePath;
-            ulong typeId = 0;
-            if (lookupableExtensions.Count() == 1)
+            string hashablePart;
+            string extensionPart;
+            int extensionIndex = filePath.IndexOf(".", StringComparison.Ordinal);
+            if (extensionIndex == -1)
             {
-                var lookupableExtension = lookupableExtensions.Single();
-                typeId = lookupableExtension.Key;
+                hashablePart = filePath;
+                extensionPart = "";
+            }
+            else
+            {
+                hashablePart = filePath.Substring(0, extensionIndex);
+                extensionPart = filePath.Substring(extensionIndex + 1, filePath.Length - extensionIndex - 1);
+            }
 
-                int extensionIndex = hashablePart.LastIndexOf(
-                    "." + lookupableExtension.Value,
-                    StringComparison.InvariantCultureIgnoreCase);
-                hashablePart = hashablePart.Substring(0, extensionIndex);
+            ulong typeId = 0;
+            var extensions = ExtensionsMap.Where(e => e.Value == extensionPart).ToList();
+            if (extensions.Count() == 1)
+            {
+                var extension = extensions.Single();
+                typeId = extension.Key;
             }
             ulong hash = HashFileName(hashablePart);
             hash = (typeId << 51) | hash;
