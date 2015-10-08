@@ -5,14 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using GzsTool.PathId;
-
 namespace GzsTool.Utility
 {
     internal static class Hashing
     {
         private static readonly MD5 Md5 = MD5.Create();
-        private static readonly PathIdFile PathIdFile = new PathIdFile();
         private static readonly Dictionary<ulong, string> HashNameDictionary = new Dictionary<ulong, string>();
 
         private static readonly Dictionary<byte[], string> Md5HashNameDictionary =
@@ -225,7 +222,7 @@ namespace GzsTool.Utility
 
             ulong typeId = 0;
             var extensions = ExtensionsMap.Where(e => e.Value == extensionPart).ToList();
-            if (extensions.Count() == 1)
+            if (extensions.Count == 1)
             {
                 var extension = extensions.Single();
                 typeId = extension.Key;
@@ -274,18 +271,17 @@ namespace GzsTool.Utility
             }
             fileName += fileExtension;
             
-            DebugCompareHash(foundFileName, hash, fileName);
+            DebugAssertHashMatches(foundFileName, hash, fileName);
 
             return foundFileName;
         }
 
-        // TODO: Remove after testing that the hashing works correctly
         [Conditional("DEBUG")]
-        private static void DebugCompareHash(bool foundFileName, ulong hash, string fileName)
+        private static void DebugAssertHashMatches(bool foundFileName, ulong hash, string fileName)
         {
             if (foundFileName)
             {
-                ulong hashTest = Hashing.HashFileNameWithExtension(fileName);
+                ulong hashTest = HashFileNameWithExtension(fileName);
                 if (hash != hashTest)
                 {
                     Debug.WriteLine("{0};{1:x};{2:x};{3:x}", fileName, hash, hashTest, (hashTest - hash));
@@ -348,14 +344,6 @@ namespace GzsTool.Utility
             }
 
             return extension;
-        }
-
-        public static void ReadPs3PathIdFile(string path)
-        {
-            using (FileStream input = new FileStream(path, FileMode.Open))
-            {
-                PathIdFile.Read(input);
-            }
         }
     }
 }

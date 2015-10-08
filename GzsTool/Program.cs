@@ -63,8 +63,6 @@ namespace GzsTool
             string executingAssemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             const string gzsDictionaryName = "qar_dictionary.txt";
             const string fpkDictionaryName = "fpk_dictionary.txt";
-            // TODO: Enable reading the ps3 file when there is actually a need for it.
-            ////Hashing.ReadPs3PathIdFile(Path.Combine(executingAssemblyLocation, "pathid_list_ps3.bin"));
             try
             {
                 Console.WriteLine("Reading {0}", gzsDictionaryName);
