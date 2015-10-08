@@ -14,15 +14,6 @@ namespace GzsTool.Pftxs
     {
         public const int HeaderSize = 32;
         
-        [XmlIgnore]
-        public string FileName { get; set; }
-
-        [XmlIgnore]
-        public long DataOffset { get; set; }
-        
-        [XmlAttribute("FilePath")]
-        public string FilePath { get; set; }
-
         [XmlAttribute("Hash")]
         public ulong Hash { get; set; }
 
@@ -64,7 +55,7 @@ namespace GzsTool.Pftxs
 
                 string name;
                 entry.FileNameFound = Hashing.TryGetFileNameFromHash(entry.Hash, out name);
-                entry.FilePath = Hashing.NormalizeFilePath(name);
+                entry.FilePath = name;
                 Entries.Add(entry);
             }
             
@@ -83,7 +74,7 @@ namespace GzsTool.Pftxs
             foreach (var entry in Entries)
             {
                 entry.CalculateHash();
-                var data = inputDirectory.ReadFile(entry.FilePath);
+                var data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(entry.FilePath));
                 entry.Offset = Convert.ToInt32(writer.BaseStream.Position - ftexHeaderPosition);
                 entry.Size = Convert.ToInt32(data.Length);
                 writer.Write(data);

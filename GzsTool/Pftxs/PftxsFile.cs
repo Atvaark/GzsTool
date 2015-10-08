@@ -5,6 +5,7 @@ using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common;
 using GzsTool.Common.Interfaces;
+using GzsTool.Utility;
 
 namespace GzsTool.Pftxs
 {
@@ -69,7 +70,7 @@ namespace GzsTool.Pftxs
                     yield return new FileDataStreamContainer
                     {
                         DataStream = () => new MemoryStream(localEntry.Data),
-                        FileName = entry.FilePath
+                        FileName = Hashing.NormalizeFilePath(entry.FilePath)
                     };
                 }
             }

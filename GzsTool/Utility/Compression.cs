@@ -5,17 +5,20 @@ namespace GzsTool.Utility
 {
     internal static class Compression
     {
-        internal static byte[] Inflate(byte[] buffer)
+        internal static byte[] Uncompress(byte[] buffer)
         {
             return ZlibStream.UncompressBuffer(buffer);
         }
 
-        internal static byte[] Deflate(byte[] buffer)
+        internal static byte[] Compress(byte[] buffer)
         {
-            using (Stream input = new MemoryStream(buffer))
-            using (Stream zlibInput = new ZlibStream(input, CompressionMode.Compress, CompressionLevel.Default))
+            using (var output = new MemoryStream())
             {
-                return zlibInput.ToArray();
+                using (Stream compressor = new ZlibStream(output, CompressionMode.Compress, CompressionLevel.BestCompression))
+                {
+                    compressor.Write(buffer, 0, buffer.Length);
+                }
+                return output.ToArray();
             }
         }
     }

@@ -63,7 +63,10 @@ namespace GzsTool.Qar
         private void DebugAssertHashMatches()
         {
             ulong newHash = Hashing.HashFileNameWithExtension(FilePath);
-            Debug.Assert(Hash == newHash);
+            if (Hash != newHash)
+            {
+                Debug.WriteLine("Hash mismatch '{0}' {1:x}!={2:x}", FilePath, newHash, Hash);
+            }
         }
 
         public void Read(BinaryReader reader)
@@ -87,7 +90,7 @@ namespace GzsTool.Qar
             uint md54 = reader.ReadUInt32() ^ xorMask2;
 
             string filePath;
-            FileNameFound = TryGetFilePath(out filePath);
+            FileNameFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
             FilePath = filePath;
             DataOffset = reader.BaseStream.Position;
         }
@@ -97,7 +100,7 @@ namespace GzsTool.Qar
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
             {
                 DataStream = ReadDataLazy(input),
-                FileName = FilePath
+                FileName = Hashing.NormalizeFilePath(FilePath)
             };
             return fileDataStreamContainer;
         }
@@ -118,42 +121,36 @@ namespace GzsTool.Qar
             input.Position = DataOffset;
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
 
-            byte[] sectionData = reader.ReadBytes((int)UncompressedSize);
-            Decrypt1(sectionData, hashLow: (uint) (Hash & 0xFFFFFFFF));
-            uint magicEntry = BitConverter.ToUInt32(sectionData, 0);
+            byte[] data = reader.ReadBytes((int)UncompressedSize);
+            Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF));
+            uint magicEntry = BitConverter.ToUInt32(data, 0);
             if (magicEntry == 0xA0F8EFE6)
             {
                 const int headerSize = 8;
-                Key = BitConverter.ToUInt32(sectionData, 4);
+                Key = BitConverter.ToUInt32(data, 4);
                 UncompressedSize -= headerSize;
-                byte[] newSectionData = new byte[UncompressedSize];
-                Array.Copy(sectionData, headerSize, newSectionData, 0, UncompressedSize);
-                Decrypt2(newSectionData, Key);
+                byte[] newData = new byte[UncompressedSize];
+                Array.Copy(data, headerSize, newData, 0, UncompressedSize);
+                Decrypt2(newData, Key);
+                data = newData;
             }
             else if (magicEntry == 0xE3F8EFE6)
             {
                 const int headerSize = 16;
-                Key = BitConverter.ToUInt32(sectionData, 4);
+                Key = BitConverter.ToUInt32(data, 4);
                 UncompressedSize -= headerSize;
-                byte[] newSectionData = new byte[UncompressedSize];
-                Array.Copy(sectionData, headerSize, newSectionData, 0, UncompressedSize);
-                Decrypt2(newSectionData, Key);
-                sectionData = newSectionData;
+                byte[] newData = new byte[UncompressedSize];
+                Array.Copy(data, headerSize, newData, 0, UncompressedSize);
+                Decrypt2(newData, Key);
+                data = newData;
             }
 
             if (Compressed)
             {
-                sectionData = Compression.Inflate(sectionData);
+                data = Compression.Uncompress(data);
             }
 
-            return new MemoryStream(sectionData);
-        }
-        
-        private bool TryGetFilePath(out string filePath)
-        {
-            bool filePathFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
-            filePath = Hashing.NormalizeFilePath(filePath);
-            return filePathFound;
+            return new MemoryStream(data);
         }
         
         private void Decrypt1(byte[] sectionData, uint hashLow)
@@ -274,7 +271,7 @@ namespace GzsTool.Qar
             uint compressedSize;
             if (Compressed)
             {
-                data = Compression.Deflate(data);
+                data = Compression.Compress(data);
                 compressedSize = (uint) data.Length;
             }
             else
