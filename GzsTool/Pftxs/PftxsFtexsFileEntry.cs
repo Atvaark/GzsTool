@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Xml.Serialization;
-using GzsTool.Common.Interfaces;
+using GzsTool.Utility;
 
 namespace GzsTool.Pftxs
 {
@@ -26,6 +26,35 @@ namespace GzsTool.Pftxs
         [XmlIgnore]
         public byte[] Data { get; set; }
 
+        [XmlIgnore]
+        public bool FileNameFound { get; set; }
+
+        public bool ShouldSerializeHash()
+        {
+            return FileNameFound == false;
+        }
+
+        public void CalculateHash()
+        {
+            if (Hash == 0)
+            {
+                Hash = Hashing.HashFileNameWithExtension(FilePath);
+            }
+            else
+            {
+                DebugAssertHashMatches();
+            }
+        }
+
+        [Conditional("DEBUG")]
+        private void DebugAssertHashMatches()
+        {
+            ulong newHash = Hashing.HashFileNameWithExtension(FilePath);
+            if (Hash != newHash)
+            {
+                Debug.WriteLine("Hash mismatch '{0}' {1}!={2}", FilePath, newHash, Hash);
+            }
+        }
 
         public void Read(Stream input)
         {
@@ -34,7 +63,7 @@ namespace GzsTool.Pftxs
             Offset = reader.ReadInt32();
             Size = reader.ReadInt32();
         }
-        
+
         public void Write(BinaryWriter writer)
         {
             writer.Write(Hash);

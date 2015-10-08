@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Common.Interfaces;
@@ -28,6 +29,21 @@ namespace GzsTool.Pftxs
         [XmlArray("Entries")]
         public List<PftxsFtexsFileEntry> Entries { get; set; }
 
+        public bool ShouldSerializeHash()
+        {
+            var firstEntry = Entries.FirstOrDefault();
+            return firstEntry != null && !firstEntry.FileNameFound;
+        }
+
+        private void CalculateHash()
+        {
+            var firstEntry = Entries.FirstOrDefault();
+            if (firstEntry != null)
+            {
+                Hash = firstEntry.Hash;
+            }
+        }
+
         public void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
@@ -47,7 +63,7 @@ namespace GzsTool.Pftxs
                 entry.Read(input);
 
                 string name;
-                Hashing.TryGetFileNameFromHash(entry.Hash, out name);
+                entry.FileNameFound = Hashing.TryGetFileNameFromHash(entry.Hash, out name);
                 entry.FilePath = Hashing.NormalizeFilePath(name);
                 Entries.Add(entry);
             }
@@ -63,17 +79,20 @@ namespace GzsTool.Pftxs
         {
             long ftexHeaderPosition = writer.BaseStream.Position;
             writer.BaseStream.Position += HeaderSize + Entries.Count * PftxsFtexsFileEntry.HeaderSize;
-
+            
             foreach (var entry in Entries)
             {
+                entry.CalculateHash();
                 var data = inputDirectory.ReadFile(entry.FilePath);
                 entry.Offset = Convert.ToInt32(writer.BaseStream.Position - ftexHeaderPosition);
                 entry.Size = Convert.ToInt32(data.Length);
                 writer.Write(data);
             }
-            long endPosition = writer.BaseStream.Position;
+            CalculateHash();
 
+            long endPosition = writer.BaseStream.Position;
             writer.BaseStream.Position = ftexHeaderPosition;
+
             writer.Write(Convert.ToUInt32(0x58455446)); // FTEX
             writer.Write(Convert.ToUInt32(endPosition - ftexHeaderPosition)); // Size
             writer.Write(Hash);
@@ -81,6 +100,7 @@ namespace GzsTool.Pftxs
             writer.Write(0U);
             writer.Write(0U);
             writer.Write(0U);
+
             foreach (var entry in Entries)
             {
                 entry.Write(writer);
