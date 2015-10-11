@@ -9,6 +9,7 @@ using GzsTool.Common.Interfaces;
 using GzsTool.Fpk;
 using GzsTool.Pftxs;
 using GzsTool.Qar;
+using GzsTool.Sbp;
 using GzsTool.Utility;
 
 namespace GzsTool
@@ -17,7 +18,7 @@ namespace GzsTool
     {
         private static readonly XmlSerializer ArchiveSerializer = new XmlSerializer(
             typeof(ArchiveFile),
-            new[] { typeof(FpkFile), typeof(PftxsFile), typeof(QarFile) });
+            new[] { typeof(FpkFile), typeof(PftxsFile), typeof(QarFile), typeof(SbpFile) });
 
         private static void Main(string[] args)
         {
@@ -27,26 +28,25 @@ namespace GzsTool
                 string path = args[0];
                 if (File.Exists(path))
                 {
-                    if (path.EndsWith(".dat", StringComparison.CurrentCultureIgnoreCase))
+                    string extension = Path.GetExtension(path);
+                    switch (extension)
                     {
-                        ReadQarFile(path);
-                        return;
-                    }
-                    if (path.EndsWith(".fpk", StringComparison.CurrentCultureIgnoreCase) ||
-                        path.EndsWith(".fpkd", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        ReadFpkArchive(path);
-                        return;
-                    }
-                    if (path.EndsWith(".pftxs", StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        ReadPftxsArchive(path);
-                        return;
-                    }
-                    if (path.EndsWith(".xml", StringComparison.CurrentCultureIgnoreCase))
-                    {
-                        WriteArchive(path);
-                        return;
+                        case ".dat":
+                            ReadQarFile(path);
+                            return;
+                        case ".fpk":
+                        case ".fpkd":
+                            ReadFpkArchive(path);
+                            return;
+                        case ".pftxs":
+                            ReadPftxsArchive(path);
+                            return;
+                        case ".sbp":
+                            ReadSbpArchive(path);
+                            return;
+                        case ".xml":
+                            WriteArchive(path);
+                            return;
                     }
                 }
                 else if (Directory.Exists(path))
@@ -185,31 +185,53 @@ namespace GzsTool
             }
         }
 
+        private static void ReadSbpArchive(string path)
+        {
+            string fileDirectory = Path.GetDirectoryName(path);
+            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+            string outputDirectoryPath = string.Format("{0}\\{1}_sbp", fileDirectory, fileNameWithoutExtension);
+            string xmlOutputPath = Path.Combine(fileDirectory,
+                string.Format("{0}.xml", Path.GetFileName(path)));
+            IDirectory outputDirectory = new FileSystemDirectory(outputDirectoryPath);
+
+            using (FileStream input = new FileStream(path, FileMode.Open))
+            using (FileStream xmlOutput = new FileStream(xmlOutputPath, FileMode.Create))
+            {
+                SbpFile sbpFile = SbpFile.ReadSbpFile(input, fileNameWithoutExtension);
+                sbpFile.Name = Path.GetFileName(path);
+                foreach (var exportedFile in sbpFile.ExportFiles(input))
+                {
+                    Console.WriteLine(exportedFile.FileName);
+                    outputDirectory.WriteFile(exportedFile.FileName, exportedFile.DataStream);
+                }
+
+                ArchiveSerializer.Serialize(xmlOutput, sbpFile);
+            }
+        }
+
         private static void WriteArchive(string path)
         {
             var directory = Path.GetDirectoryName(path);
             using (FileStream xmlInput = new FileStream(path, FileMode.Open))
             {
-                object file = ArchiveSerializer.Deserialize(xmlInput);
-                QarFile qarFile = file as QarFile;
-                if (qarFile != null)
-                {
-                    WriteQarArchive(qarFile, directory);
-                }
-                FpkFile fpkFile = file as FpkFile;
-                if (fpkFile != null)
-                {
-                    WriteFpkArchive(fpkFile, directory);
-                }
-                PftxsFile pftxsFile = file as PftxsFile;
-                if (pftxsFile != null)
-                {
-                    WritePftxsArchive(pftxsFile, directory);
-                }
+                ArchiveFile file = ArchiveSerializer.Deserialize(xmlInput) as ArchiveFile;
+                WriteArchive((dynamic)file, directory);
             }
         }
 
-        private static void WriteQarArchive(QarFile qarFile, string workingDirectory)
+        private static void WriteArchive(ArchiveFile archiveFile, string workingDirectory)
+        {
+            if (archiveFile == null)
+            {
+                Console.WriteLine("Error: Unknown archive type");
+            }
+            else
+            {
+                Console.WriteLine("Error: Repacking archives of type " + archiveFile.GetType().Name + " is not supported");
+            }
+        }
+        
+        private static void WriteArchive(QarFile qarFile, string workingDirectory)
         {
             string outputPath = Path.Combine(workingDirectory, qarFile.Name);
             string fileSystemInputDirectory = Path.Combine(workingDirectory,
@@ -223,7 +245,7 @@ namespace GzsTool
             }
         }
 
-        private static void WriteFpkArchive(FpkFile fpkFile, string workingDirectory)
+        private static void WriteArchive(FpkFile fpkFile, string workingDirectory)
         {
             string outputPath = Path.Combine(workingDirectory, fpkFile.Name);
             string fileSystemInputDirectory = string.Format("{0}\\{1}_{2}", workingDirectory,
@@ -235,7 +257,7 @@ namespace GzsTool
             }
         }
 
-        private static void WritePftxsArchive(PftxsFile pftxsFile, string workingDirectory)
+        private static void WriteArchive(PftxsFile pftxsFile, string workingDirectory)
         {
             string outputPath = Path.Combine(workingDirectory, pftxsFile.Name);
             string fileSystemInputDirectory = string.Format("{0}\\{1}_pftxs", workingDirectory,

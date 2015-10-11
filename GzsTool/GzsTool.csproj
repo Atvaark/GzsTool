@@ -67,6 +67,8 @@
     <Compile Include="Pftxs\PftxsFtexsFileEntry.cs" />
     <Compile Include="Qar\QarEntry.cs" />
     <Compile Include="Qar\QarFile.cs" />
+    <Compile Include="Sbp\SbpFile.cs" />
+    <Compile Include="Sbp\SbpEntry.cs" />
     <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />
