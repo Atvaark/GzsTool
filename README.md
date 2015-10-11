@@ -1,5 +1,5 @@
 # GzsTool
-C# Fox Engine dat/qar, ~~g0s,~~ fpk, fpkd and pftxs unpacker/repacker
+C# Fox Engine dat/qar, fpk, fpkd, pftxs and sbp unpacker/repacker
  
 Requirements
 --------
@@ -31,6 +31,11 @@ GzsTool file_path.fpkd
 Unpacking a pftxs file. This will unpack all files to the folder called "file_name_pftxs" and will create a "file_name.pftxs.xml" file.
 ```
 GzsTool file_path.pftxs
+```
+
+Unpacking a sbp file. This will unpack all files to the folder called "file_name_sbp" and will create a "file_name.sbp.xml" file.
+```
+GzsTool file_path.sbp
 ```
  
 Unpacking all fpk and fpkd files in a folder. This will unpack all files to their respective folders and create the respective xml files. 

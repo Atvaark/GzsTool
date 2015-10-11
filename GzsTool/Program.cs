@@ -86,7 +86,7 @@ namespace GzsTool
         private static void ShowUsageInfo()
         {
             Console.WriteLine("GzsTool by Atvaark\n" +
-                              "  A tool for unpacking and repacking qar, fpk, fpkd and pftxs files\n" +
+                              "  A tool for unpacking and repacking qar, fpk, fpkd, pftxs and sbp files\n" +
                               "Usage:\n" +
                               "  GzsTool file_path|folder_path\n" +
                               "Examples:\n" +
@@ -94,6 +94,7 @@ namespace GzsTool
                               "  GzsTool file_path.fpk      - Unpacks the fpk file\n" +
                               "  GzsTool file_path.fpkd     - Unpacks the fpkd file\n" +
                               "  GzsTool file_path.pftxs    - Unpacks the pftxs file\n" +
+                              "  GzsTool file_path.sbp      - Unpacks the sbp file\n" +
                               "  GzsTool folder_path        - Unpacks all fpk and fpkd files in the folder\n" +
                               "  GzsTool file_path.dat.xml  - Repacks the qar file\n" +
                               "  GzsTool file_path.fpk.xml  - Repacks the fpk file\n" +
