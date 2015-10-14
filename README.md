@@ -1,6 +1,7 @@
 # GzsTool
 C# Fox Engine dat/qar, fpk, fpkd, pftxs and sbp unpacker/repacker
  
+[![Build status](https://ci.appveyor.com/api/projects/status/eqetqq6fdggc964b?svg=true)](https://ci.appveyor.com/project/Atvaark/gzstool)
 Requirements
 --------
 ```
