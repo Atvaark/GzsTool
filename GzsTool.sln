@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{DD8666
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GzsTool.Core", "GzsTool.Core\GzsTool.Core.csproj", "{45DD2F22-A580-4B4E-AA3D-20C0C57D9C39}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{17481FC5-3DB9-4F0D-949E-B41B99217D0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{17481FC5-3DB9-4F0D-949E-B41B99217D0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{17481FC5-3DB9-4F0D-949E-B41B99217D0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45DD2F22-A580-4B4E-AA3D-20C0C57D9C39}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45DD2F22-A580-4B4E-AA3D-20C0C57D9C39}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45DD2F22-A580-4B4E-AA3D-20C0C57D9C39}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45DD2F22-A580-4B4E-AA3D-20C0C57D9C39}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
