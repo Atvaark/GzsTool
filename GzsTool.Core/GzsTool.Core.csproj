@@ -72,7 +72,6 @@
     <Compile Include="Qar\QarFile.cs" />
     <Compile Include="Sbp\SbpEntry.cs" />
     <Compile Include="Sbp\SbpFile.cs" />
-    <Compile Include="Utility\BigEndianBinaryReader.cs" />
     <Compile Include="Utility\Compression.cs" />
     <Compile Include="Utility\Hashing.cs" />
     <Compile Include="Utility\StructuralEqualityComparer.cs" />

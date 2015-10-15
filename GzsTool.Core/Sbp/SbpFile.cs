@@ -14,15 +14,7 @@ namespace GzsTool.Core.Sbp
     {
         [XmlArray("Entries")]
         public List<SbpEntry> Entries { get; set; }
-
-        public static SbpFile ReadSbpFile(FileStream input, string fileName)
-        {
-            SbpFile sbpFile = new SbpFile();
-            sbpFile.Name = fileName;
-            sbpFile.Read(input);
-            return sbpFile;
-        }
-
+        
         public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.ASCII, true);

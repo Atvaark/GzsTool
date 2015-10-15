@@ -12,7 +12,7 @@ namespace GzsTool.Core.Pftxs
     [XmlType("Entry", Namespace = "Pftxs")]
     public class PftxsFtexFile
     {
-        public const int HeaderSize = 32;
+        private const int HeaderSize = 32;
         
         [XmlAttribute("Hash")]
         public ulong Hash { get; set; }

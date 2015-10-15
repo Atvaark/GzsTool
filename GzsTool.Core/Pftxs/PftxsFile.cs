@@ -28,14 +28,7 @@ namespace GzsTool.Core.Pftxs
 
         [XmlIgnore]
         public int FileCount { get; set; }
-
-        public static PftxsFile ReadPftxsFile(Stream input)
-        {
-            PftxsFile pftxsFile = new PftxsFile();
-            pftxsFile.Read(input);
-            return pftxsFile;
-        }
-
+        
         public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);

@@ -25,14 +25,7 @@ namespace GzsTool.Core.Fpk
 
         [XmlArray("References")]
         public List<FpkReference> References { get; private set; }
-
-        public static FpkFile ReadFpkFile(Stream input)
-        {
-            FpkFile fpkFile = new FpkFile();
-            fpkFile.Read(input);
-            return fpkFile;
-        }
-
+        
         public override void Read(Stream input)
         {
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);

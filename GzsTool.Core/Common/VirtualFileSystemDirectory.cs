@@ -8,7 +8,7 @@ namespace GzsTool.Core.Common
 {
     public class VirtualFileSystemDirectory : IDirectory
     {
-        public const string DirectorySeparator = "\\";
+        private const string DirectorySeparator = "\\";
         private readonly List<VirtualFileSystemDirectory> _directories;
         private readonly List<VirtualFileSystemFile> _files;
         private readonly string _name;
