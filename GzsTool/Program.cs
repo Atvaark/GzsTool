@@ -22,7 +22,7 @@ namespace GzsTool
 
         private static void Main(string[] args)
         {
-            if (args.Length == 1)
+            if (args.Length == 1 || args.Length == 2)
             {
                 ReadDictionaries();
                 string path = args[0];
@@ -88,6 +88,7 @@ namespace GzsTool
                               "  A tool for unpacking and repacking qar, fpk, fpkd, pftxs and sbp files\n" +
                               "Usage:\n" +
                               "  GzsTool file_path|folder_path\n" +
+                              "  GzsTool file.dat <Path\to\file.fpk>|<FileHash> (extract single file from DAT)\n" +
                               "Examples:\n" +
                               "  GzsTool file_path.dat      - Unpacks the qar file\n" +
                               "  GzsTool file_path.fpk      - Unpacks the fpk file\n" +

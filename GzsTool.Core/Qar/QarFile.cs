@@ -100,7 +100,26 @@ namespace GzsTool.Core.Qar
 
         public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
-            return Entries.Select(gzsEntry => gzsEntry.Export(input));
+            string[] args = Environment.GetCommandLineArgs();
+            if(args.Count() == 3)
+            {
+                // file to extract specified
+                ulong hash;
+                ulong.TryParse(args[2], out hash);
+                if(hash == 0)
+                {
+                    // extract file by path
+                    Entries.RemoveAll(gzsEntry => gzsEntry.FilePath != args[2]);
+                } else
+                {
+                    // extract file by hash
+                    Entries.RemoveAll(gzsEntry => gzsEntry.Hash != hash);
+                }
+                return Entries.Select(gzsEntry => gzsEntry.Export(input));
+            } else
+            {
+                return Entries.Select(gzsEntry => gzsEntry.Export(input));
+            }
         }
 
         public override void Write(Stream output, IDirectory inputDirectory)
