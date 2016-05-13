@@ -26,6 +26,11 @@ namespace GzsTool
             {
                 ReadDictionaries();
                 string path = args[0];
+                if (!Path.IsPathRooted(path))
+                {
+                    path = Path.GetFullPath(path);
+                }
+
                 if (File.Exists(path))
                 {
                     string extension = Path.GetExtension(path);
