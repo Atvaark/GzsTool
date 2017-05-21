@@ -25,6 +25,9 @@ namespace GzsTool.Core.Qar
         [XmlAttribute("Compressed")]
         public bool Compressed { get; set; }
 
+        [XmlAttribute("MetaFlag")]
+        public bool MetaFlag { get; set; }
+
         [XmlIgnore]
         public bool FileNameFound { get; set; }
 
@@ -47,6 +50,11 @@ namespace GzsTool.Core.Qar
             return Key != 0;
         }
 
+        public bool ShouldSerializeMetaFlag()
+        {
+            return MetaFlag;
+        }
+
         public void CalculateHash()
         {
             if (Hash == 0)
@@ -56,6 +64,11 @@ namespace GzsTool.Core.Qar
             else
             {
                 DebugAssertHashMatches();
+            }
+            
+            if (MetaFlag)
+            {
+                Hash = Hash | Hashing.MetaFlag;
             }
         }
 
@@ -79,6 +92,7 @@ namespace GzsTool.Core.Qar
             uint hashLow = reader.ReadUInt32() ^ xorMask1;
             uint hashHigh = reader.ReadUInt32() ^ xorMask1;
             Hash = (ulong)hashHigh << 32 | hashLow;
+            MetaFlag = (Hash & Hashing.MetaFlag) > 0;
             UncompressedSize = reader.ReadUInt32() ^ xorMask2;
             CompressedSize = reader.ReadUInt32() ^ xorMask3;
 
