@@ -17,6 +17,13 @@ namespace GzsTool.Core.Qar
         [XmlAttribute("Flags")]
         public uint Flags { get; set; }
 
+        /// <summary>
+        ///     MGSV: 1
+        ///     MGS: 2
+        /// </summary>
+        [XmlAttribute("Version")]
+        public uint Version { get; set; }
+
         [XmlArray("Entries")]
         public List<QarEntry> Entries { get; set; }
         
@@ -43,14 +50,14 @@ namespace GzsTool.Core.Qar
             uint unknownCount = reader.ReadUInt32() ^ xorMask3;
             uint blockFileEnd = reader.ReadUInt32() ^ xorMask4;
             uint offsetFirstFile = reader.ReadUInt32() ^ xorMask1;
-            uint unknown1 = reader.ReadUInt32() ^ xorMask1; // 1
+            Version = reader.ReadUInt32() ^ xorMask1; // 1 2
             uint unknown2 = reader.ReadUInt32() ^ xorMask2; // 0
 
             // Determines the alignment block size.
             int blockShiftBits = (Flags & 0x800) > 0 ? 12 : 10;
 
             byte[] sectionsData = reader.ReadBytes((int)(8 * fileCount));
-            ulong[] sections = DecryptSectionList(fileCount, sectionsData);
+            ulong[] sections = DecryptSectionList(fileCount, sectionsData, Version);
             byte[] unknownSectionData = reader.ReadBytes((int)(16 * unknownCount));
 
             List<QarEntry> entries = new List<QarEntry>();
@@ -68,36 +75,60 @@ namespace GzsTool.Core.Qar
             Entries = entries;
         }
 
-        private static ulong[] DecryptSectionList(uint fileCount, byte[] sections)
+        private static ulong[] DecryptSectionList(uint fileCount, byte[] sections, uint version)
         {
-            uint[] decryptionTable = 
+            uint[] xorTable = 
             {
                 0x41441043,
                 0x11C22050,
                 0xD05608C3,
-                0x532C7319,
-                //0x97CB3127,
-                //0xC3A5C85C,
-                //0xBE98F273,
-                //0xB492B66F
+                0x532C7319
             };
-
+            
             ulong[] result = new ulong[fileCount];
-            for (int i = 0; i < result.Length; i += 1)
+
+            if (version != 2)
             {
-                int offset1 = i * sizeof(ulong);
-                int offset2 = i * sizeof(ulong) + sizeof(uint);
-                uint i1 = BitConverter.ToUInt32(sections, offset1);
-                uint i2 = BitConverter.ToUInt32(sections, offset2);
-                int decryptIndex1 = (i + (offset1 / 5)) % 4;
-                int decryptIndex2 = (i + (offset2 / 5)) % 4;
-                i1 ^= decryptionTable[decryptIndex1];
-                i2 ^= decryptionTable[decryptIndex2];
-                result[i] = (ulong)i2 << 32 | i1;
+                for (int i = 0; i < result.Length; i += 1)
+                {
+                    int offset1 = i * sizeof(ulong);
+                    int offset2 = i * sizeof(ulong) + sizeof(uint);
+                    uint i1 = BitConverter.ToUInt32(sections, offset1);
+                    uint i2 = BitConverter.ToUInt32(sections, offset2);
+                    int index1 = (i + (offset1 / 5)) % 4;
+                    int index2 = (i + (offset2 / 5)) % 4;
+                    i1 ^= xorTable[index1];
+                    i2 ^= xorTable[index2];
+
+                    result[i] = (ulong)i2 << 32 | i1;
+                }
             }
+            else
+            {
+                uint xor = 0xA2C18EC3;
+                for (int i = 0; i < result.Length; i += 1)
+                {
+                    int offset1 = i * sizeof(ulong);
+                    int offset2 = i * sizeof(ulong) + sizeof(uint);
+                    uint i1 = BitConverter.ToUInt32(sections, offset1);
+                    uint i2 = BitConverter.ToUInt32(sections, offset2);
+                    uint index1 = (uint)((xor + (offset1 / 5)) % 4);
+                    uint index2 = (uint)((xor + (offset2 / 5)) % 4);
+                    i1 ^= xorTable[index1];
+                    i2 ^= xorTable[index2];
+
+                    int rotation = (int)(i2 >> 8) % 19;
+                    uint rotated = (i1 >> rotation) | (i1 << (32 - rotation)); // ROR
+                    xor ^= rotated;
+
+                    result[i] = (ulong)i2 << 32 | i1;
+                }
+
+            }
+
             return result;
         }
-
+        
         public override IEnumerable<FileDataStreamContainer> ExportFiles(Stream input)
         {
             return Entries.Select(gzsEntry => gzsEntry.Export(input));
@@ -145,7 +176,7 @@ namespace GzsTool.Core.Qar
             writer.Write(xorMask3); // unknown count (not saved in the xml and output directory)
             writer.Write(endPositionHead ^ xorMask4);
             writer.Write((uint)dataOffset ^ xorMask1);
-            writer.Write(1 ^ xorMask1);
+            writer.Write(Version ^ xorMask1);
             writer.Write(0 ^ xorMask2);
 
             output.Position = tableOffset;
@@ -160,7 +191,7 @@ namespace GzsTool.Core.Qar
             int bufferLength = Buffer.ByteLength(sections);
             byte[] sectionsData = new byte[bufferLength];
             Buffer.BlockCopy(sections, 0, sectionsData, 0, bufferLength);
-            ulong[] encryptedSections = DecryptSectionList((uint)Entries.Count, sectionsData);
+            ulong[] encryptedSections = DecryptSectionList((uint)Entries.Count, sectionsData, Version);
             byte[] encryptedSectionsData = new byte[bufferLength];
             Buffer.BlockCopy(encryptedSections, 0, encryptedSectionsData, 0, bufferLength);
             return encryptedSectionsData;
