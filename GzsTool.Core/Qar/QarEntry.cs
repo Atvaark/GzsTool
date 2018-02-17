@@ -99,10 +99,11 @@ namespace GzsTool.Core.Qar
             uint hashHigh = reader.ReadUInt32() ^ xorMask1;
             Hash = (ulong)hashHigh << 32 | hashLow;
             MetaFlag = (Hash & Hashing.MetaFlag) > 0;
-            UncompressedSize = reader.ReadUInt32() ^ xorMask2;
-            CompressedSize = reader.ReadUInt32() ^ xorMask3;
+            uint size1 = reader.ReadUInt32() ^ xorMask2;
+            uint size2 = reader.ReadUInt32() ^ xorMask3;
             Version = version;
-
+            UncompressedSize = Version != 2 ? size1 : size2;
+            CompressedSize = Version != 2 ? size2 : size1;
             Compressed = UncompressedSize != CompressedSize;
 
             uint md51 = reader.ReadUInt32() ^ xorMask4;
@@ -341,8 +342,8 @@ namespace GzsTool.Core.Qar
             Decrypt1(data, hashLow: (uint)(Hash & 0xFFFFFFFF));
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
-            writer.Write(compressedSize ^ xorMask2);
-            writer.Write(uncompressedSize ^ xorMask3);
+            writer.Write((Version != 2 ? uncompressedSize : compressedSize) ^ xorMask2);
+            writer.Write((Version != 2 ? compressedSize : uncompressedSize) ^ xorMask3);
 
             writer.Write(BitConverter.ToUInt32(DataHash, 0) ^ xorMask4);
             writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
