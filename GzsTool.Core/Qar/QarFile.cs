@@ -110,20 +110,23 @@ namespace GzsTool.Core.Qar
                 {
                     int offset1 = i * sizeof(ulong);
                     int offset2 = i * sizeof(ulong) + sizeof(uint);
-                    uint i1 = BitConverter.ToUInt32(sections, offset1);
-                    uint i2 = BitConverter.ToUInt32(sections, offset2);
+                    uint section1 = BitConverter.ToUInt32(sections, offset1);
+                    uint section2 = BitConverter.ToUInt32(sections, offset2);
                     uint index1 = (uint)((xor + (offset1 / 5)) % 4);
                     uint index2 = (uint)((xor + (offset2 / 5)) % 4);
-                    i1 ^= xorTable[index1];
-                    i2 ^= xorTable[index2];
-
-                    int rotation = (int)(i2 >> 8) % 19;
-
-                    // TODO: Fix section list encryption with v2
+                    uint i1 = section1 ^ xorTable[index1];
+                    uint i2 = section2 ^xorTable[index2];
+                    result[i] = (ulong)i2 << 32 | i1;
+                    
+                    if (encrypt)
+                    {
+                        i1 = section1;
+                        i2 = section2;
+                    }
+                    
+                    int rotation = (int)(i2 / 256) % 19;
                     uint rotated = (i1 >> rotation) | (i1 << (32 - rotation)); // ROR
                     xor ^= rotated;
-
-                    result[i] = (ulong)i2 << 32 | i1;
                 }
             }
 
