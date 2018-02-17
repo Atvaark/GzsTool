@@ -28,6 +28,9 @@ namespace GzsTool.Core.Qar
         [XmlAttribute("MetaFlag")]
         public bool MetaFlag { get; set; }
 
+        [XmlAttribute("Version")]
+        public uint Version { get; set; }
+
         [XmlIgnore]
         public bool FileNameFound { get; set; }
 
@@ -36,10 +39,7 @@ namespace GzsTool.Core.Qar
 
         [XmlIgnore]
         public uint CompressedSize { get; private set; }
-
-        [XmlIgnore]
-        public uint Version { get; private set; }
-
+        
         [XmlIgnore]
         public long DataOffset { get; set; }
 
@@ -148,7 +148,7 @@ namespace GzsTool.Core.Qar
         {
             input.Position = DataOffset;
             BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-
+            
             byte[] data = reader.ReadBytes((int)UncompressedSize);
             Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF));
             uint magicEntry = BitConverter.ToUInt32(data, 0);
