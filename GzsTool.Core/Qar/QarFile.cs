@@ -69,13 +69,13 @@ namespace GzsTool.Core.Qar
                 reader.BaseStream.Position = (long)sectionOffset;
 
                 var entry = new QarEntry();
-                entry.Read(reader);
+                entry.Read(reader, Version);
                 entries.Add(entry);
             }
             Entries = entries;
         }
 
-        private static ulong[] DecryptSectionList(uint fileCount, byte[] sections, uint version)
+        private static ulong[] DecryptSectionList(uint fileCount, byte[] sections, uint version, bool encrypt = false)
         {
             uint[] xorTable = 
             {
@@ -118,12 +118,13 @@ namespace GzsTool.Core.Qar
                     i2 ^= xorTable[index2];
 
                     int rotation = (int)(i2 >> 8) % 19;
+
+                    // TODO: Fix section list encryption with v2
                     uint rotated = (i1 >> rotation) | (i1 << (32 - rotation)); // ROR
                     xor ^= rotated;
 
                     result[i] = (ulong)i2 << 32 | i1;
                 }
-
             }
 
             return result;
@@ -191,7 +192,7 @@ namespace GzsTool.Core.Qar
             int bufferLength = Buffer.ByteLength(sections);
             byte[] sectionsData = new byte[bufferLength];
             Buffer.BlockCopy(sections, 0, sectionsData, 0, bufferLength);
-            ulong[] encryptedSections = DecryptSectionList((uint)Entries.Count, sectionsData, Version);
+            ulong[] encryptedSections = DecryptSectionList((uint)Entries.Count, sectionsData, Version, encrypt: true);
             byte[] encryptedSectionsData = new byte[bufferLength];
             Buffer.BlockCopy(encryptedSections, 0, encryptedSectionsData, 0, bufferLength);
             return encryptedSectionsData;

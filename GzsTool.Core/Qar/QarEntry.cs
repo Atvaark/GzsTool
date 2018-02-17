@@ -36,10 +36,16 @@ namespace GzsTool.Core.Qar
 
         [XmlIgnore]
         public uint CompressedSize { get; private set; }
-        
+
+        [XmlIgnore]
+        public uint Version { get; private set; }
+
         [XmlIgnore]
         public long DataOffset { get; set; }
 
+        [XmlIgnore]
+        public byte[] DataHash { get; set; }
+        
         public bool ShouldSerializeHash()
         {
             return FileNameFound == false;
@@ -82,7 +88,7 @@ namespace GzsTool.Core.Qar
             }
         }
 
-        public void Read(BinaryReader reader)
+        public void Read(BinaryReader reader, uint version)
         {
             const uint xorMask1 = 0x41441043;
             const uint xorMask2 = 0x11C22050;
@@ -95,6 +101,7 @@ namespace GzsTool.Core.Qar
             MetaFlag = (Hash & Hashing.MetaFlag) > 0;
             UncompressedSize = reader.ReadUInt32() ^ xorMask2;
             CompressedSize = reader.ReadUInt32() ^ xorMask3;
+            Version = version;
 
             Compressed = UncompressedSize != CompressedSize;
 
@@ -102,13 +109,19 @@ namespace GzsTool.Core.Qar
             uint md52 = reader.ReadUInt32() ^ xorMask1;
             uint md53 = reader.ReadUInt32() ^ xorMask1;
             uint md54 = reader.ReadUInt32() ^ xorMask2;
-
+            byte[] md5Hash = new byte[16];
+            Buffer.BlockCopy(BitConverter.GetBytes(md51), 0, md5Hash, 0, sizeof(uint));
+            Buffer.BlockCopy(BitConverter.GetBytes(md52), 0, md5Hash, 4, sizeof(uint));
+            Buffer.BlockCopy(BitConverter.GetBytes(md53), 0, md5Hash, 8, sizeof(uint));
+            Buffer.BlockCopy(BitConverter.GetBytes(md54), 0, md5Hash, 12, sizeof(uint));
+            DataHash = md5Hash;
+            
             string filePath;
             FileNameFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
             FilePath = filePath;
             DataOffset = reader.BaseStream.Position;
         }
-        
+
         public FileDataStreamContainer Export(Stream input)
         {
             FileDataStreamContainer fileDataStreamContainer = new FileDataStreamContainer
@@ -195,27 +208,59 @@ namespace GzsTool.Core.Qar
             };
 
             int blocks = sectionData.Length / sizeof(ulong);
-            for (int i = 0; i < blocks; i++)
+            if (Version != 2)
             {
-                int offset1 = i * sizeof(ulong);
-                int offset2 = i * sizeof(ulong) + sizeof(uint);
-                int index = (int)(2 * ((hashLow + offset1 / 11) % 4));
-                uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index];
-                uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1];
-                Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
-                Buffer.BlockCopy(BitConverter.GetBytes(u2), 0, sectionData, offset2, sizeof(uint));
-            }
+                for (int i = 0; i < blocks; i++)
+                {
+                    int offset1 = i * sizeof(ulong);
+                    int offset2 = i * sizeof(ulong) + sizeof(uint);
+                    int index = (int)(2 * ((hashLow + offset1 / 11) % 4));
+                    uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index];
+                    uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1];
+                    Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
+                    Buffer.BlockCopy(BitConverter.GetBytes(u2), 0, sectionData, offset2, sizeof(uint));
+                }
 
-            int remaining = sectionData.Length % sizeof(ulong);
-            for (int i = 0; i < remaining; i++)
+                int remaining = sectionData.Length % sizeof(ulong);
+                for (int i = 0; i < remaining; i++)
+                {
+                    int offset = blocks * sizeof(long) + i * sizeof(byte);
+                    int index = (int)(2 * ((hashLow + (offset - (offset % sizeof(long))) / 11) % 4));
+                    int decryptionIndex = offset % sizeof(long);
+                    uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
+                    byte xorMaskByte = (byte)((xorMask >> (8 * decryptionIndex)) & 0xff);
+                    byte b1 = (byte)(sectionData[offset] ^ xorMaskByte);
+                    sectionData[offset] = b1;
+                }
+            }
+            else
             {
-                int offset = blocks * sizeof(long) + i * sizeof(byte);
-                int index = (int)(2 * ((hashLow + (offset - (offset % sizeof(long))) / 11) % 4));
-                int decryptionIndex = offset % sizeof(long);
-                uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
-                byte xorMaskByte = (byte)((xorMask >> (8 * decryptionIndex)) & 0xff);
-                byte b1 = (byte)(sectionData[offset] ^ xorMaskByte);
-                sectionData[offset] = b1;
+                ulong seed = BitConverter.ToUInt64(DataHash, (int)(hashLow % 2) * 8);
+                uint seedLow = (uint) seed & 0xFFFFFFFF;
+                uint seedHigh = (uint) (seed >> 32);
+                for (int i = 0; i < blocks; i++)
+                {
+                    int offset1 = i * sizeof(ulong);
+                    int offset2 = i * sizeof(ulong) + sizeof(uint);
+                    int index = 2 * (int)((((hashLow + seed + (ulong) (offset1 / 11)) % 4)));
+                    uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index] ^ seedLow;
+                    uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1] ^ seedHigh;
+                    Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
+                    Buffer.BlockCopy(BitConverter.GetBytes(u2), 0, sectionData, offset2, sizeof(uint));
+                }
+                
+                int remaining = sectionData.Length % sizeof(ulong);
+                for (int i = 0; i < remaining; i++)
+                {
+                    int offset = blocks * sizeof(long) + i * sizeof(byte);
+                    int index = 2 * (int)((((hashLow + seed + (ulong)(offset / 11)) % 4)));
+                    int decryptionIndex = offset % sizeof(long);
+                    uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
+                    byte xorMaskByte = (byte)((xorMask >> (8 * decryptionIndex)) & 0xff);
+                    uint seedMask = decryptionIndex < 4 ? seedLow : seedHigh;
+                    byte seedByte = (byte)((seedMask >> (8 * decryptionIndex)) & 0xff);
+                    sectionData[offset] = (byte)(sectionData[offset] ^ (byte)((int)xorMaskByte ^ seedByte));
+                }
             }
         }
 
@@ -280,7 +325,7 @@ namespace GzsTool.Core.Qar
             const uint xorMask4 = 0x532C7319;
 
             byte[] data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(FilePath));
-            byte[] hash = Hashing.Md5Hash(data);
+            DataHash = Hashing.Md5Hash(data);
             uint uncompressedSize = (uint)data.Length;
             uint compressedSize;
             if (Compressed)
@@ -299,10 +344,10 @@ namespace GzsTool.Core.Qar
             writer.Write(compressedSize ^ xorMask2);
             writer.Write(uncompressedSize ^ xorMask3);
 
-            writer.Write(BitConverter.ToUInt32(hash, 0) ^ xorMask4);
-            writer.Write(BitConverter.ToUInt32(hash, 4) ^ xorMask1);
-            writer.Write(BitConverter.ToUInt32(hash, 8) ^ xorMask1);
-            writer.Write(BitConverter.ToUInt32(hash, 12) ^ xorMask2);
+            writer.Write(BitConverter.ToUInt32(DataHash, 0) ^ xorMask4);
+            writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
+            writer.Write(BitConverter.ToUInt32(DataHash, 8) ^ xorMask1);
+            writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
 
             // TODO: Maybe reencrypt the lua files.
             writer.Write(data);
