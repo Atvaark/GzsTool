@@ -85,7 +85,6 @@ namespace GzsTool.Core.Utility
             "gani",
             "geom",
             "ger.lng",
-            "gkn", // TODO: Unconfirmed placeholder for ID 1531
             "gpfp",
             "grxla",
             "grxoc",
@@ -112,6 +111,7 @@ namespace GzsTool.Core.Utility
             "nta",
             "obr",
             "obrb",
+            "param",
             "parts",
             "path",
             "pftxs",
