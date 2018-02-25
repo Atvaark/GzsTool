@@ -58,6 +58,7 @@
     <Compile Include="Common\Interfaces\IFileSystemEntry.cs" />
     <Compile Include="Common\VirtualFileSystemDirectory.cs" />
     <Compile Include="Common\VirtualFileSystemFile.cs" />
+    <Compile Include="Crypto\Decrypt1Stream.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />

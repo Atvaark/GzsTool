@@ -5,9 +5,9 @@ namespace GzsTool.Core.Utility
 {
     internal static class Compression
     {
-        internal static byte[] Uncompress(byte[] buffer)
+        public static Stream UncompressStream(Stream stream)
         {
-            return ZlibStream.UncompressBuffer(buffer);
+            return new ZlibStream(stream, CompressionMode.Decompress, false);
         }
 
         internal static byte[] Compress(byte[] buffer)

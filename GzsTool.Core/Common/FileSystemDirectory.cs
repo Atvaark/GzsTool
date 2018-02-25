@@ -32,9 +32,10 @@ namespace GzsTool.Core.Common
         {
             string outputFilePath = Path.Combine(_baseDirectoryPath, filePath);
             Directory.CreateDirectory(Path.GetDirectoryName(outputFilePath));
+            using (Stream input = fileContentStream())
             using (FileStream output = new FileStream(outputFilePath, FileMode.Create))
             {
-                fileContentStream().CopyTo(output);
+                input.CopyTo(output);
             }
         }
         

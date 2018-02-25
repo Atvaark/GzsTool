@@ -6,6 +6,7 @@ using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Core.Common;
 using GzsTool.Core.Common.Interfaces;
+using GzsTool.Core.Crypto;
 using GzsTool.Core.Utility;
 
 namespace GzsTool.Core.Qar
@@ -147,39 +148,42 @@ namespace GzsTool.Core.Qar
         private Stream ReadData(Stream input)
         {
             input.Position = DataOffset;
-            BinaryReader reader = new BinaryReader(input, Encoding.Default, true);
-            
             int dataSize = (int)CompressedSize;
-            byte[] data = reader.ReadBytes(dataSize);
-            Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF));
-            uint magicEntry = BitConverter.ToUInt32(data, 0);
+
+            byte[] header = new byte[16];
+            uint magicEntry;
+            using (Stream headerStream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF)))
+            {
+                headerStream.Read(header, 0, 4);
+                magicEntry = BitConverter.ToUInt32(header, 0);
+            }
+            
+            input.Position = DataOffset;
+            Stream stream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF));
+            
             if (magicEntry == 0xA0F8EFE6)
             {
-                const int headerSize = 8;
-                Key = BitConverter.ToUInt32(data, 4);
-                dataSize -= headerSize;
-                byte[] newData = new byte[dataSize];
-                Array.Copy(data, headerSize, newData, 0, dataSize);
+                stream.Read(header, 0, 8);
+                Key = BitConverter.ToUInt32(header, 4);
+                byte[] newData = stream.ToArray();
                 Decrypt2(newData, Key);
-                data = newData;
+                stream = new MemoryStream(newData); // TODO: Convert Decrypt2 to Stream
             }
             else if (magicEntry == 0xE3F8EFE6)
             {
-                const int headerSize = 16;
-                Key = BitConverter.ToUInt32(data, 4);
-                dataSize -= headerSize;
-                byte[] newData = new byte[dataSize];
-                Array.Copy(data, headerSize, newData, 0, dataSize);
+                stream.Read(header, 0, 16);
+                Key = BitConverter.ToUInt32(header, 4);
+                byte[] newData = stream.ToArray();
                 Decrypt2(newData, Key);
-                data = newData;
+                stream = new MemoryStream(newData); // TODO: Convert Decrypt2 to Stream
             }
-
+            
             if (Compressed)
             {
-                data = Compression.Uncompress(data);
+                stream = Compression.UncompressStream(stream);
             }
 
-            return new MemoryStream(data);
+            return stream;
         }
 
         private void Decrypt1(byte[] sectionData, uint hashLow)
@@ -216,7 +220,7 @@ namespace GzsTool.Core.Qar
                 {
                     int offset1 = i * sizeof(ulong);
                     int offset2 = i * sizeof(ulong) + sizeof(uint);
-                    int index = (int) (2 * ((hashLow + offset1 / 11) % 4));
+                    int index = (int)(2 * ((hashLow + offset1 / 11) % 4));
                     uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index];
                     uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1];
                     Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
@@ -227,24 +231,24 @@ namespace GzsTool.Core.Qar
                 for (int i = 0; i < remaining; i++)
                 {
                     int offset = blocks * sizeof(long) + i * sizeof(byte);
-                    int index = (int) (2 * ((hashLow + (offset - (offset % sizeof(long))) / 11) % 4));
+                    int index = (int)(2 * ((hashLow + (offset - (offset % sizeof(long))) / 11) % 4));
                     int decryptionIndex = offset % sizeof(long);
                     uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
-                    byte xorMaskByte = (byte) ((xorMask >> (8 * decryptionIndex)) & 0xff);
-                    byte b1 = (byte) (sectionData[offset] ^ xorMaskByte);
+                    byte xorMaskByte = (byte)((xorMask >> (8 * decryptionIndex)) & 0xff);
+                    byte b1 = (byte)(sectionData[offset] ^ xorMaskByte);
                     sectionData[offset] = b1;
                 }
             }
             else
             {
-                ulong seed = BitConverter.ToUInt64(DataHash, (int) (hashLow % 2) * 8);
-                uint seedLow = (uint) seed & 0xFFFFFFFF;
-                uint seedHigh = (uint) (seed >> 32);
+                ulong seed = BitConverter.ToUInt64(DataHash, (int)(hashLow % 2) * 8);
+                uint seedLow = (uint)seed & 0xFFFFFFFF;
+                uint seedHigh = (uint)(seed >> 32);
                 for (int i = 0; i < blocks; i++)
                 {
                     int offset1 = i * sizeof(ulong);
                     int offset2 = i * sizeof(ulong) + sizeof(uint);
-                    int index = 2 * (int) ((hashLow + seed + (ulong) (offset1 / 11)) % 4);
+                    int index = 2 * (int)((hashLow + seed + (ulong)(offset1 / 11)) % 4);
                     uint u1 = BitConverter.ToUInt32(sectionData, offset1) ^ decryptionTable[index] ^ seedLow;
                     uint u2 = BitConverter.ToUInt32(sectionData, offset2) ^ decryptionTable[index + 1] ^ seedHigh;
                     Buffer.BlockCopy(BitConverter.GetBytes(u1), 0, sectionData, offset1, sizeof(uint));
@@ -256,16 +260,17 @@ namespace GzsTool.Core.Qar
                 {
                     int offset = blocks * sizeof(long) + i * sizeof(byte);
                     int offsetBlock = offset - (offset % sizeof(long));
-                    int index = 2 * (int) ((hashLow + seed + (ulong) (offsetBlock / 11)) % 4);
+                    int index = 2 * (int)((hashLow + seed + (ulong)(offsetBlock / 11)) % 4);
                     int decryptionIndex = offset % sizeof(long);
                     uint xorMask = decryptionIndex < 4 ? decryptionTable[index] : decryptionTable[index + 1];
-                    byte xorMaskByte = (byte) ((xorMask >> (8 * (decryptionIndex%4))) & 0xff);
+                    byte xorMaskByte = (byte)((xorMask >> (8 * (decryptionIndex % 4))) & 0xff);
                     uint seedMask = decryptionIndex < 4 ? seedLow : seedHigh;
-                    byte seedByte = (byte) ((seedMask >> (8 * (decryptionIndex%4))) & 0xff);
-                    sectionData[offset] = (byte) (sectionData[offset] ^ (byte) (xorMaskByte ^ seedByte));
+                    byte seedByte = (byte)((seedMask >> (8 * (decryptionIndex % 4))) & 0xff);
+                    sectionData[offset] = (byte)(sectionData[offset] ^ (byte)(xorMaskByte ^ seedByte));
                 }
             }
         }
+
 
         private unsafe void Decrypt2(byte[] input, uint key)
         {
