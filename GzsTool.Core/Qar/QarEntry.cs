@@ -20,6 +20,9 @@ namespace GzsTool.Core.Qar
         [XmlAttribute("Key")]
         public uint Key { get; set; }
 
+        [XmlAttribute("Encryption")]
+        public uint Encryption { get; set; }
+
         [XmlAttribute("FilePath")]
         public string FilePath { get; set; }
 
@@ -55,6 +58,11 @@ namespace GzsTool.Core.Qar
         public bool ShouldSerializeKey()
         {
             return Key != 0;
+        }
+
+        public bool ShouldSerializeEncryption()
+        {
+            return Encryption != 0;
         }
 
         public bool ShouldSerializeMetaFlag()
@@ -122,6 +130,22 @@ namespace GzsTool.Core.Qar
             FileNameFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
             FilePath = filePath;
             DataOffset = reader.BaseStream.Position;
+            
+            byte[] header = new byte[8];
+            using (Stream headerStream = new Decrypt1Stream(reader.BaseStream, (int)Version, header.Length, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF)))
+            {
+                headerStream.Read(header, 0, header.Length);
+                Encryption = BitConverter.ToUInt32(header, 0);
+            }
+            
+            if (Encryption == Cryptography.Magic1 || Encryption == Cryptography.Magic2)
+            {
+                Key = BitConverter.ToUInt32(header, 4);
+            }
+            else
+            {
+                Encryption = 0;
+            }
         }
 
         public FileDataStreamContainer Export(Stream input)
@@ -149,32 +173,13 @@ namespace GzsTool.Core.Qar
         {
             input.Position = DataOffset;
             int dataSize = (int)CompressedSize;
-
-            byte[] header = new byte[16];
-            uint magicEntry;
-            using (Stream headerStream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF)))
-            {
-                headerStream.Read(header, 0, 4);
-                magicEntry = BitConverter.ToUInt32(header, 0);
-            }
-            
-            input.Position = DataOffset;
             Stream stream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF));
             
-            if (magicEntry == 0xA0F8EFE6)
+            if (Encryption == Cryptography.Magic1 || Encryption == Cryptography.Magic2)
             {
-                stream.Read(header, 0, 8);
-                dataSize -= 8;
-                Key = BitConverter.ToUInt32(header, 4);
-
-                stream = new Decrypt2Stream(stream, dataSize, Key);
-            }
-            else if (magicEntry == 0xE3F8EFE6)
-            {
-                stream.Read(header, 0, 16);
-                dataSize -= 16;
-                Key = BitConverter.ToUInt32(header, 4);
-
+                int headerSize = Cryptography.GetHeaderSize(Encryption);
+                stream.Read(new byte[headerSize], 0, headerSize);
+                dataSize -= headerSize;
                 stream = new Decrypt2Stream(stream, dataSize, Key);
             }
             
@@ -195,7 +200,6 @@ namespace GzsTool.Core.Qar
             const uint xorMask4 = 0x532C7319;
 
             byte[] data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(FilePath));
-            DataHash = Hashing.Md5Hash(data);
             uint uncompressedSize = (uint) data.Length;
             uint compressedSize;
             if (Compressed)
@@ -208,7 +212,33 @@ namespace GzsTool.Core.Qar
                 compressedSize = uncompressedSize;
             }
 
-            Encryption.Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF), version: Version, dataHash: DataHash);
+            if (Encryption != 0)
+            {
+                Cryptography.Decrypt2(data, Key);
+
+                int headerSize = Cryptography.GetHeaderSize(Encryption);
+                if (headerSize >= 8)
+                {
+                    byte[] header = new byte[headerSize];
+                    Buffer.BlockCopy(BitConverter.GetBytes(Encryption), 0, header, 0, sizeof(uint));
+                    Buffer.BlockCopy(BitConverter.GetBytes(Key), 0, header, 4, sizeof(uint));
+                    if (headerSize == 16)
+                    {
+                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 8, sizeof(uint));
+                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 12, sizeof(uint)); // TODO: Could also be compressed size.
+                    }
+
+                    byte[] encryptedData = new byte[data.Length + headerSize];
+                    Buffer.BlockCopy(header, 0, encryptedData, 0, header.Length);
+                    Buffer.BlockCopy(data, 0, encryptedData, headerSize, data.Length);
+                    data = encryptedData;
+                    compressedSize = (uint) encryptedData.Length;
+                    uncompressedSize = Compressed ? uncompressedSize : (uint) encryptedData.Length;
+                }
+            }
+
+            DataHash = Hashing.Md5Hash(data);
+            Cryptography.Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF), version: Version, dataHash: DataHash);
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
             writer.Write((Version != 2 ? uncompressedSize : compressedSize) ^ xorMask2);
@@ -218,8 +248,7 @@ namespace GzsTool.Core.Qar
             writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(DataHash, 8) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
-
-            // TODO: Maybe reencrypt the lua files.
+            
             writer.Write(data);
         }
     }

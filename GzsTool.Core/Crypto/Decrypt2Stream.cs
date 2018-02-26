@@ -23,8 +23,7 @@ namespace GzsTool.Core.Crypto
             _key = 278 * key;
             _blockKey = key | ((key ^ 25974) << 16);
         }
-
-
+        
         public override void Flush()
         {
             throw new NotSupportedException();
