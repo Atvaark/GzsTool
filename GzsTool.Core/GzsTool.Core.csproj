@@ -59,6 +59,7 @@
     <Compile Include="Common\VirtualFileSystemDirectory.cs" />
     <Compile Include="Common\VirtualFileSystemFile.cs" />
     <Compile Include="Crypto\Decrypt1Stream.cs" />
+    <Compile Include="Crypto\Decrypt2Stream.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="Pftxs\PftxsFtexFile.cs" />
     <Compile Include="Pftxs\PftxsFtexsFileEntry.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Crypto\Encryption.cs" />
     <Compile Include="Qar\QarEntry.cs" />
     <Compile Include="Qar\QarFile.cs" />
     <Compile Include="Sbp\SbpEntry.cs" />

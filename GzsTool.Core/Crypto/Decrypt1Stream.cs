@@ -122,7 +122,6 @@ namespace GzsTool.Core.Crypto
             }
         }
 
-
         private void Decrypt1(byte[] data)
         {
             uint[] decryptionTable =
