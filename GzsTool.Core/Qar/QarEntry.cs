@@ -46,8 +46,8 @@ namespace GzsTool.Core.Qar
 
         [XmlIgnore]
         public long DataOffset { get; set; }
-
-        [XmlIgnore]
+        
+        [XmlAttribute("DataHash")]
         public byte[] DataHash { get; set; }
 
         public bool ShouldSerializeHash()
@@ -68,6 +68,11 @@ namespace GzsTool.Core.Qar
         public bool ShouldSerializeMetaFlag()
         {
             return MetaFlag;
+        }
+
+        public bool ShouldSerializeDataHash()
+        {
+            return Encryption != 0 && DataHash != null;
         }
 
         public void CalculateHash()
@@ -225,7 +230,7 @@ namespace GzsTool.Core.Qar
                     if (headerSize == 16)
                     {
                         Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 8, sizeof(uint));
-                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 12, sizeof(uint)); // TODO: Could also be compressed size.
+                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 12, sizeof(uint));
                     }
 
                     byte[] encryptedData = new byte[data.Length + headerSize];
@@ -236,19 +241,24 @@ namespace GzsTool.Core.Qar
                     uncompressedSize = Compressed ? uncompressedSize : (uint) encryptedData.Length;
                 }
             }
+            
+            // TODO: HACK to support loading SDD lua files
+            if (DataHash == null)
+            {
+                DataHash = Hashing.Md5Hash(data);
+            }
 
-            DataHash = Hashing.Md5Hash(data);
             Cryptography.Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF), version: Version, dataHash: DataHash);
             BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
             writer.Write(Hash ^ xorMask1Long);
             writer.Write((Version != 2 ? uncompressedSize : compressedSize) ^ xorMask2);
             writer.Write((Version != 2 ? compressedSize : uncompressedSize) ^ xorMask3);
-
+            
             writer.Write(BitConverter.ToUInt32(DataHash, 0) ^ xorMask4);
             writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(DataHash, 8) ^ xorMask1);
             writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
-            
+
             writer.Write(data);
         }
     }
