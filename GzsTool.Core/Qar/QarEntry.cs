@@ -72,7 +72,7 @@ namespace GzsTool.Core.Qar
 
         public bool ShouldSerializeDataHash()
         {
-            return Encryption != 0 && DataHash != null;
+            return DataHash != null;
         }
 
         public void CalculateHash()
@@ -242,7 +242,7 @@ namespace GzsTool.Core.Qar
                 }
             }
             
-            // TODO: HACK to support loading SDD lua files
+            // TODO: HACK to support repacked files
             if (DataHash == null)
             {
                 DataHash = Hashing.Md5Hash(data);
