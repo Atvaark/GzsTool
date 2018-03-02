@@ -19,13 +19,17 @@ namespace GzsTool.Core.Common
 
         public byte[] ReadFile(string filePath)
         {
-            string inputFilePath = Path.Combine(_baseDirectoryPath, filePath);
-            using (FileStream input = new FileStream(inputFilePath, FileMode.Open))
+            using (var stream = ReadFileStream(filePath))
             {
-                byte[] data = new byte[input.Length];
-                input.Read(data, 0, data.Length);
-                return data;
+                return stream.ToArray();
             }
+        }
+
+        public Stream ReadFileStream(string filePath)
+        {
+            string inputFilePath = Path.Combine(_baseDirectoryPath, filePath);
+            FileStream stream = new FileStream(inputFilePath, FileMode.Open);
+            return stream;
         }
 
         public void WriteFile(string filePath, Func<Stream> fileContentStream)

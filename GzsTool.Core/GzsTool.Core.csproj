@@ -60,6 +60,8 @@
     <Compile Include="Common\VirtualFileSystemFile.cs" />
     <Compile Include="Crypto\Decrypt1Stream.cs" />
     <Compile Include="Crypto\Decrypt2Stream.cs" />
+    <Compile Include="Crypto\Md5Stream.cs" />
+    <Compile Include="Crypto\StreamMode.cs" />
     <Compile Include="ExtensionMethods.cs" />
     <Compile Include="Fpk\FpkEntry.cs" />
     <Compile Include="Fpk\FpkFile.cs" />

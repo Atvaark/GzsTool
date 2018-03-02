@@ -9,17 +9,20 @@ namespace GzsTool.Core.Crypto
         private readonly Stream _input;
 
         private readonly int _size;
-
+        
         private readonly uint _key;
+
+        private readonly StreamMode _streamMode;
 
         private int _position;
 
         private uint _blockKey;
         
-        public Decrypt2Stream(Stream input, int size, uint key)
+        public Decrypt2Stream(Stream input, int size, uint key, StreamMode streamMode)
         {
             _input = input;
             _size = size;
+            _streamMode = streamMode;
             _key = 278 * key;
             _blockKey = key | ((key ^ 25974) << 16);
         }
@@ -63,14 +66,21 @@ namespace GzsTool.Core.Crypto
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException();
+            if (offset != 0)
+            {
+                throw new NotSupportedException();
+            }
+            
+            Decrypt2(buffer, count);
+            _input.Write(buffer, offset, count);
+            _position += count;
         }
 
         public override bool CanRead
         {
             get
             {
-                return true;
+                return _streamMode == StreamMode.Read;
             }
         }
 
@@ -86,7 +96,7 @@ namespace GzsTool.Core.Crypto
         {
             get
             {
-                return false;
+                return _streamMode == StreamMode.Write;
             }
         }
 

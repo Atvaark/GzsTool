@@ -9,17 +9,10 @@ namespace GzsTool.Core.Utility
         {
             return new ZlibStream(stream, CompressionMode.Decompress, false);
         }
-
-        internal static byte[] Compress(byte[] buffer)
+        
+        internal static Stream CompressStream(Stream stream)
         {
-            using (var output = new MemoryStream())
-            {
-                using (Stream compressor = new ZlibStream(output, CompressionMode.Compress, CompressionLevel.BestCompression))
-                {
-                    compressor.Write(buffer, 0, buffer.Length);
-                }
-                return output.ToArray();
-            }
+            return new ZlibStream(stream, CompressionMode.Compress, CompressionLevel.BestCompression, true);
         }
     }
 }

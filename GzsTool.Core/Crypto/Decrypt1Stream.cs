@@ -6,30 +6,30 @@ namespace GzsTool.Core.Crypto
     public class Decrypt1Stream : Stream
     {
         private readonly Stream _input;
-
-        private int _position;
-
+        
         private readonly int _size;
 
         private readonly int _version;
 
         private readonly uint _hashLow;
-        
+
+        private readonly StreamMode _streamMode;
+
         private readonly ulong _seed;
 
         private readonly uint _seedLow;
 
         private readonly uint _seedHigh;
 
-        public Decrypt1Stream(Stream input, int version, int size, byte[] dataHash, uint hashLow)
+        private int _position;
+
+        public Decrypt1Stream(Stream input, int version, int size, byte[] dataHash, uint hashLow, StreamMode streamMode)
         {
             _input = input;
-
             _version = version;
-
             _size = size;
-
             _hashLow = hashLow;
+            _streamMode = streamMode;
             _seed = BitConverter.ToUInt64(dataHash, (int)(hashLow % 2) * 8);
             _seedLow = (uint)_seed & 0xFFFFFFFF;
             _seedHigh = (uint)(_seed >> 32);
@@ -74,14 +74,21 @@ namespace GzsTool.Core.Crypto
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            throw new NotSupportedException();
+            if (offset != 0)
+            {
+                throw new NotSupportedException();
+            }
+
+            Decrypt1(buffer);
+            _input.Write(buffer, offset, count);
+            _position += count;
         }
 
         public override bool CanRead
         {
             get
             {
-                return true;
+                return _streamMode == StreamMode.Read;
             }
         }
 
@@ -97,7 +104,7 @@ namespace GzsTool.Core.Crypto
         {
             get
             {
-                return false;
+                return _streamMode == StreamMode.Write;
             }
         }
 

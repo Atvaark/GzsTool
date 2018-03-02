@@ -27,15 +27,24 @@ namespace GzsTool.Core.Common
 
         public byte[] ReadFile(string filePath)
         {
+            using (var stream = ReadFileStream(filePath))
+            {
+                byte[] content = stream.ToArray();
+                return content;
+            }
+        }
+
+        public Stream ReadFileStream(string filePath)
+        {
             int index = filePath.IndexOf(DirectorySeparator, StringComparison.Ordinal);
             if (index == -1)
             {
-                return _files.Single(f => f.Name == filePath).Content;
+                return _files.Single(f => f.Name == filePath).ContentStream;
             }
             string subDirectory = filePath.Substring(0, index);
             string subDirectoryFilePath = filePath.Substring(index + DirectorySeparator.Length,
                 filePath.Length - index - DirectorySeparator.Length);
-            return _directories.Single(d => d.Name == subDirectory).ReadFile(subDirectoryFilePath);
+            return _directories.Single(d => d.Name == subDirectory).ReadFileStream(subDirectoryFilePath);
         }
 
         public void WriteFile(string filePath, Func<Stream> fileContentStream)

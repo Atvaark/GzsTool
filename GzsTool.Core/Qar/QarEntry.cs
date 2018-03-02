@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using GzsTool.Core.Common;
@@ -137,7 +136,7 @@ namespace GzsTool.Core.Qar
             DataOffset = reader.BaseStream.Position;
             
             byte[] header = new byte[8];
-            using (Stream headerStream = new Decrypt1Stream(reader.BaseStream, (int)Version, header.Length, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF)))
+            using (Stream headerStream = new Decrypt1Stream(reader.BaseStream, (int)Version, header.Length, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF), streamMode: StreamMode.Read))
             {
                 headerStream.Read(header, 0, header.Length);
                 Encryption = BitConverter.ToUInt32(header, 0);
@@ -178,88 +177,104 @@ namespace GzsTool.Core.Qar
         {
             input.Position = DataOffset;
             int dataSize = (int)CompressedSize;
-            Stream stream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF));
-            
+            Stream stream = new Decrypt1Stream(input, (int)Version, dataSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF), streamMode: StreamMode.Read);
+
             if (Encryption == Cryptography.Magic1 || Encryption == Cryptography.Magic2)
             {
                 int headerSize = Cryptography.GetHeaderSize(Encryption);
                 stream.Read(new byte[headerSize], 0, headerSize);
                 dataSize -= headerSize;
-                stream = new Decrypt2Stream(stream, dataSize, Key);
+                stream = new Decrypt2Stream(stream, dataSize, Key, StreamMode.Read);
             }
-            
+
             if (Compressed)
             {
                 stream = Compression.UncompressStream(stream);
             }
-
+            
             return stream;
         }
 
         public void Write(Stream output, IDirectory inputDirectory)
         {
-            const ulong xorMask1Long = 0x4144104341441043;
-            const uint xorMask1 = 0x41441043;
-            const uint xorMask2 = 0x11C22050;
-            const uint xorMask3 = 0xD05608C3;
-            const uint xorMask4 = 0x532C7319;
-
-            byte[] data = inputDirectory.ReadFile(Hashing.NormalizeFilePath(FilePath));
-            uint uncompressedSize = (uint) data.Length;
-            uint compressedSize;
-            if (Compressed)
+            string tempFileName = Path.GetTempFileName();
+            using (Stream inputStream = inputDirectory.ReadFileStream(Hashing.NormalizeFilePath(FilePath)))
+            using (FileStream tempOutputFileStream = File.Create(tempFileName, 4096, FileOptions.DeleteOnClose))
+            using (Md5Stream md5OutputStream = new Md5Stream(tempOutputFileStream))
             {
-                data = Compression.Compress(data);
-                compressedSize = (uint) data.Length;
-            }
-            else
-            {
-                compressedSize = uncompressedSize;
-            }
+                uint uncompressedSize = (uint)inputStream.Length;
 
-            if (Encryption != 0)
-            {
-                Cryptography.Decrypt2(data, Key);
-
-                int headerSize = Cryptography.GetHeaderSize(Encryption);
-                if (headerSize >= 8)
+                Stream outputDataStream = md5OutputStream;
+                if (Compressed)
                 {
-                    byte[] header = new byte[headerSize];
-                    Buffer.BlockCopy(BitConverter.GetBytes(Encryption), 0, header, 0, sizeof(uint));
-                    Buffer.BlockCopy(BitConverter.GetBytes(Key), 0, header, 4, sizeof(uint));
-                    if (headerSize == 16)
+                    outputDataStream = Compression.CompressStream(outputDataStream);
+                }
+
+                if (Encryption != 0)
+                {
+                    int encryptionHeaderSize = Cryptography.GetHeaderSize(Encryption);
+                    if (encryptionHeaderSize >= 8)
                     {
-                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 8, sizeof(uint));
-                        Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 12, sizeof(uint));
+                        byte[] header = new byte[encryptionHeaderSize];
+                        Buffer.BlockCopy(BitConverter.GetBytes(Encryption), 0, header, 0, sizeof(uint));
+                        Buffer.BlockCopy(BitConverter.GetBytes(Key), 0, header, 4, sizeof(uint));
+                        if (encryptionHeaderSize == 16)
+                        {
+                            Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 8, sizeof(uint));
+                            Buffer.BlockCopy(BitConverter.GetBytes(uncompressedSize), 0, header, 12, sizeof(uint));
+                        }
+
+                        using (var headerStream = new MemoryStream(header))
+                        {
+                            headerStream.CopyTo(outputDataStream);
+                        }
                     }
 
-                    byte[] encryptedData = new byte[data.Length + headerSize];
-                    Buffer.BlockCopy(header, 0, encryptedData, 0, header.Length);
-                    Buffer.BlockCopy(data, 0, encryptedData, headerSize, data.Length);
-                    data = encryptedData;
-                    compressedSize = (uint) encryptedData.Length;
-                    uncompressedSize = Compressed ? uncompressedSize : (uint) encryptedData.Length;
+                    outputDataStream = new Decrypt2Stream(outputDataStream, (int)uncompressedSize, Key, StreamMode.Write);
                 }
-            }
-            
-            // TODO: HACK to support repacked files
-            if (DataHash == null)
-            {
-                DataHash = Hashing.Md5Hash(data);
-            }
 
-            Cryptography.Decrypt1(data, hashLow: (uint) (Hash & 0xFFFFFFFF), version: Version, dataHash: DataHash);
-            BinaryWriter writer = new BinaryWriter(output, Encoding.Default, true);
-            writer.Write(Hash ^ xorMask1Long);
-            writer.Write((Version != 2 ? uncompressedSize : compressedSize) ^ xorMask2);
-            writer.Write((Version != 2 ? compressedSize : uncompressedSize) ^ xorMask3);
-            
-            writer.Write(BitConverter.ToUInt32(DataHash, 0) ^ xorMask4);
-            writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
-            writer.Write(BitConverter.ToUInt32(DataHash, 8) ^ xorMask1);
-            writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
+                inputStream.CopyTo(outputDataStream);
+                outputDataStream.Close();
 
-            writer.Write(data);
+                long headerPosition = output.Position;
+                const int entryHeaderSize = 32;
+                long dataStartPosition = headerPosition + entryHeaderSize;
+                output.Position = dataStartPosition;
+            
+                // TODO: HACK to support repacked files
+                if (DataHash == null)
+                {
+                    md5OutputStream.Flush();
+                    DataHash = md5OutputStream.Hash;
+                }
+
+                uint compressedSize = (uint)tempOutputFileStream.Length;
+                uncompressedSize = Compressed ? uncompressedSize : compressedSize;
+                using (var decrypt1Stream = new Decrypt1Stream(output, (int)Version, (int)compressedSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF), streamMode: StreamMode.Write))
+                {
+                    tempOutputFileStream.Position = 0;
+                    tempOutputFileStream.CopyTo(decrypt1Stream); // TODO: Encrypt directly in output file if possible
+                }
+                
+                long dataEndPosition = output.Position;
+                output.Position = headerPosition;
+
+                const ulong xorMask1Long = 0x4144104341441043;
+                const uint xorMask1 = 0x41441043;
+                const uint xorMask2 = 0x11C22050;
+                const uint xorMask3 = 0xD05608C3;
+                const uint xorMask4 = 0x532C7319;
+                BinaryWriter writer = new BinaryWriter(output, Encoding.ASCII, true);
+                writer.Write(Hash ^ xorMask1Long);
+                writer.Write((Version != 2 ? uncompressedSize : compressedSize) ^ xorMask2);
+                writer.Write((Version != 2 ? compressedSize : uncompressedSize) ^ xorMask3);
+                writer.Write(BitConverter.ToUInt32(DataHash, 0) ^ xorMask4);
+                writer.Write(BitConverter.ToUInt32(DataHash, 4) ^ xorMask1);
+                writer.Write(BitConverter.ToUInt32(DataHash, 8) ^ xorMask1);
+                writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
+
+                output.Position = dataEndPosition;
+            }
         }
     }
 }

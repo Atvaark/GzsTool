@@ -325,6 +325,11 @@ namespace GzsTool.Core.Utility
             return Md5.ComputeHash(buffer);
         }
 
+        internal static byte[] Md5Hash(Stream stream)
+        {
+            return Md5.ComputeHash(stream);
+        }
+
         internal static byte[] Md5HashText(string text)
         {
             return Md5.ComputeHash(Encoding.Default.GetBytes(text));
