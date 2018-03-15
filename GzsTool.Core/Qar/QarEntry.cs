@@ -45,7 +45,7 @@ namespace GzsTool.Core.Qar
 
         [XmlIgnore]
         public long DataOffset { get; set; }
-        
+
         [XmlAttribute("DataHash")]
         public byte[] DataHash { get; set; }
 
@@ -134,14 +134,14 @@ namespace GzsTool.Core.Qar
             FileNameFound = Hashing.TryGetFileNameFromHash(Hash, out filePath);
             FilePath = filePath;
             DataOffset = reader.BaseStream.Position;
-            
+
             byte[] header = new byte[8];
             using (Stream headerStream = new Decrypt1Stream(reader.BaseStream, (int)Version, header.Length, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF), streamMode: StreamMode.Read))
             {
                 headerStream.Read(header, 0, header.Length);
                 Encryption = BitConverter.ToUInt32(header, 0);
             }
-            
+
             if (Encryption == Cryptography.Magic1 || Encryption == Cryptography.Magic2)
             {
                 Key = BitConverter.ToUInt32(header, 4);
@@ -191,23 +191,28 @@ namespace GzsTool.Core.Qar
             {
                 stream = Compression.UncompressStream(stream);
             }
-            
+
             return stream;
         }
 
         public void Write(Stream output, IDirectory inputDirectory)
         {
-            string tempFileName = Path.GetTempFileName();
             using (Stream inputStream = inputDirectory.ReadFileStream(Hashing.NormalizeFilePath(FilePath)))
-            using (FileStream tempOutputFileStream = File.Create(tempFileName, 4096, FileOptions.DeleteOnClose))
-            using (Md5Stream md5OutputStream = new Md5Stream(tempOutputFileStream))
+            using (Md5Stream md5OutputStream = new Md5Stream(output))
             {
+                long headerPosition = output.Position;
+                const int entryHeaderSize = 32;
+                long dataStartPosition = headerPosition + entryHeaderSize;
+                output.Position = dataStartPosition;
+
                 uint uncompressedSize = (uint)inputStream.Length;
 
                 Stream outputDataStream = md5OutputStream;
+                Stream outputDataStreamCompressed = null;
                 if (Compressed)
                 {
-                    outputDataStream = Compression.CompressStream(outputDataStream);
+                    outputDataStreamCompressed = Compression.CompressStream(outputDataStream);
+                    outputDataStream = outputDataStreamCompressed;
                 }
 
                 if (Encryption != 0)
@@ -234,13 +239,8 @@ namespace GzsTool.Core.Qar
                 }
 
                 inputStream.CopyTo(outputDataStream);
-                outputDataStream.Close();
+                outputDataStreamCompressed?.Close();
 
-                long headerPosition = output.Position;
-                const int entryHeaderSize = 32;
-                long dataStartPosition = headerPosition + entryHeaderSize;
-                output.Position = dataStartPosition;
-            
                 // TODO: HACK to support repacked files
                 if (DataHash == null)
                 {
@@ -248,15 +248,14 @@ namespace GzsTool.Core.Qar
                     DataHash = md5OutputStream.Hash;
                 }
 
-                uint compressedSize = (uint)tempOutputFileStream.Length;
+                long dataEndPosition = output.Position;
+                uint compressedSize = (uint)(dataEndPosition - dataStartPosition);
                 uncompressedSize = Compressed ? uncompressedSize : compressedSize;
                 using (var decrypt1Stream = new Decrypt1Stream(output, (int)Version, (int)compressedSize, DataHash, hashLow: (uint)(Hash & 0xFFFFFFFF), streamMode: StreamMode.Write))
-                {
-                    tempOutputFileStream.Position = 0;
-                    tempOutputFileStream.CopyTo(decrypt1Stream); // TODO: Encrypt directly in output file if possible
+                {				
+                    CopyTo(output, decrypt1Stream, dataStartPosition, dataEndPosition);
                 }
-                
-                long dataEndPosition = output.Position;
+
                 output.Position = headerPosition;
 
                 const ulong xorMask1Long = 0x4144104341441043;
@@ -274,6 +273,33 @@ namespace GzsTool.Core.Qar
                 writer.Write(BitConverter.ToUInt32(DataHash, 12) ^ xorMask2);
 
                 output.Position = dataEndPosition;
+            }
+        }
+
+        private void CopyTo(
+            Stream input,
+            Stream output,
+            long dataStartPosition,
+            long dataEndPosition)
+        {
+            long offset = dataStartPosition;
+            byte[] buffer = new byte[4096];
+            while (offset < dataEndPosition)
+            {
+                int blockSize = 4096;
+                int remainingSize = (int) (dataEndPosition - offset);
+                if (remainingSize < blockSize)
+                {
+                    blockSize = remainingSize;
+                }
+                
+                input.Position = offset;
+                input.Read(buffer, 0, blockSize);
+                
+                output.Position = offset;
+                output.Write(buffer, 0, blockSize);
+
+                offset += blockSize;
             }
         }
     }

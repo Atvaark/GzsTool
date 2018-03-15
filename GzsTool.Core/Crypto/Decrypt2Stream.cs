@@ -29,7 +29,7 @@ namespace GzsTool.Core.Crypto
         
         public override void Flush()
         {
-            throw new NotSupportedException();
+            _input.Flush();
         }
 
         public override long Seek(long offset, SeekOrigin origin)

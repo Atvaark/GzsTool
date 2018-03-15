@@ -120,12 +120,11 @@ namespace GzsTool.Core.Crypto
         {
             get
             {
-                return _position;
+                return _input.Position;
             }
-
             set
             {
-                throw new NotSupportedException();
+                _input.Position = value;
             }
         }
 
